@@ -6,9 +6,9 @@ from uuid import UUID, uuid4
 import pyodbc
 from pydantic import EmailStr, TypeAdapter, ValidationError
 
-from app.core.security import hash_password
-from app.db import connect
-from app.repositories.auth_repository import AuthRepository
+from Core.security import hash_password
+from DAL.auth_repository import AuthRepository
+from DAL.db import connect
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]{3,50}$")
 

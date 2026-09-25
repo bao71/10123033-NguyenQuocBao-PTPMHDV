@@ -3,9 +3,9 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.cli.create_admin import create_admin
-from app.db import connect
-from app.main import app
+from API.main import app
+from CLI.create_admin import create_admin
+from DAL.db import connect
 
 
 def _soft_delete_test_users(user_ids: list[UUID]) -> None:

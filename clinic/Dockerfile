@@ -17,16 +17,22 @@ RUN apt-get update \
 WORKDIR /app
 COPY pyproject.toml .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    mkdir app \
-    && touch app/__init__.py \
-    && pip install . pytest pytest-cov \
-    && rm -rf app
+    for package in API BLL DAL Model Core CLI; do \
+        mkdir "$package" && touch "$package/__init__.py"; \
+    done \
+    && pip install ".[test]" \
+    && rm -rf API BLL DAL Model Core CLI
 
-COPY app ./app
-COPY tests ./tests
+COPY API ./API
+COPY BLL ./BLL
+COPY DAL ./DAL
+COPY Model ./Model
+COPY Core ./Core
+COPY CLI ./CLI
+COPY Tests ./Tests
 RUN useradd --create-home --uid 10001 clinic \
     && chown -R clinic:clinic /app
 
 USER clinic
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "API.main:app", "--host", "0.0.0.0", "--port", "8000"]

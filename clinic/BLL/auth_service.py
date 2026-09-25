@@ -4,17 +4,17 @@ from uuid import UUID, uuid4
 
 import pyodbc
 
-from app.core.config import Settings
-from app.core.errors import AppError, AuthenticationError
-from app.core.security import (
+from Core.config import Settings
+from Core.errors import AppError, AuthenticationError
+from Core.security import (
     create_access_token,
     create_refresh_token,
     hash_password,
     hash_refresh_token,
     verify_password,
 )
-from app.repositories.auth_repository import AuthRepository, UserRecord
-from app.schemas.auth import RegisterRequest, TokenResponse, UserResponse
+from DAL.auth_repository import AuthRepository, UserRecord
+from Model.auth import RegisterRequest, TokenResponse, UserResponse
 
 
 @dataclass(frozen=True)

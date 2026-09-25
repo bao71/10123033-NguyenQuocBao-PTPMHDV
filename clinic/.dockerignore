@@ -5,3 +5,9 @@
 .coverage
 htmlcov
 **/*.pyc
+.env
+Database
+docs
+scripts
+compose.yaml
+README.md

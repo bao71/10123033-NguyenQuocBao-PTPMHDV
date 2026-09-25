@@ -34,10 +34,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["API", "BLL", "DAL", "Model", "Core", "CLI"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["Tests"]
 markers = ["integration: requires the ClinicManagement SQL Server"]
 addopts = "-ra"
 

@@ -80,7 +80,7 @@ Chạy từ gốc repository:
 powershell -ExecutionPolicy Bypass -File .\clinic\scripts\check.ps1
 ```
 
-Script chạy bộ kiểm tra SQL và thống kê schema. Chỉ coi việc khởi tạo là thành công khi SQL Server healthy, migration kết thúc thành công và bộ kiểm tra không báo lỗi. Có thể đọc trực tiếp nội dung kiểm tra tại [`database/checks/verify.sql`](database/checks/verify.sql).
+Script chạy bộ kiểm tra SQL và thống kê schema. Chỉ coi việc khởi tạo là thành công khi SQL Server healthy, migration kết thúc thành công và bộ kiểm tra không báo lỗi. Có thể đọc trực tiếp nội dung kiểm tra tại [`Database/checks/verify.sql`](Database/checks/verify.sql).
 
 Đây là dữ liệu khởi tạo danh mục: 5 vai trò, các quyền và một số danh mục mẫu. Bộ dữ liệu mô phỏng **ít nhất 2.000 bản ghi** theo yêu cầu BTL sẽ được bổ sung ở bước seed nghiệp vụ; chưa có tài khoản bệnh nhân/bác sĩ để đăng nhập ứng dụng ở giai đoạn này.
 
@@ -118,7 +118,7 @@ Tạo tài khoản Admin đầu tiên bằng lệnh tương tác sau; mật kh�
 
 ```powershell
 Set-Location .\clinic
-docker compose run --rm api python -m app.cli.create_admin --username admin --email admin@example.com
+docker compose run --rm api python -m CLI.create_admin --username admin --email admin@example.com
 ```
 
 Chạy lint, unit test và integration test với SQL Server thật:
@@ -152,7 +152,7 @@ Dữ liệu nằm trong named volume nên được giữ khi dừng hoặc tạo
 
 Script `scripts/migrate.sh` dùng `sqlcmd` trong container để tạo database nếu thiếu và chạy migration theo thứ tự tên file. Mỗi migration có lịch sử áp dụng và checksum, được chạy một lần; lần khởi động sau sẽ bỏ qua những migration đã áp dụng hợp lệ. Nếu nội dung migration đã chạy bị thay đổi, runner báo lỗi để tránh lệch cấu trúc giữa các máy.
 
-Khi cần sửa cấu trúc, tạo file mới như `database/migrations/004_add_example.sql`; giữ nguyên migration đã được áp dụng. Mỗi file được runner bọc trong transaction để có thể rollback khi lỗi. Không viết `GO`, lệnh điều khiển `sqlcmd` hay tự `COMMIT`/`ROLLBACK` trong các file migration này.
+Khi cần sửa cấu trúc, tạo file mới như `Database/migrations/004_add_example.sql`; giữ nguyên migration đã được áp dụng. Mỗi file được runner bọc trong transaction để có thể rollback khi lỗi. Không viết `GO`, lệnh điều khiển `sqlcmd` hay tự `COMMIT`/`ROLLBACK` trong các file migration này.
 
 Lưu file SQL bằng **UTF-8**; chuỗi Unicode T-SQL sử dụng tiền tố `N`, ví dụ `N'Lễ tân'`. Dữ liệu thời gian lưu theo **UTC**; ứng dụng sẽ chuyển sang `Asia/Ho_Chi_Minh` khi hiển thị.
 
@@ -164,9 +164,19 @@ Lưu file SQL bằng **UTF-8**; chuỗi Unicode T-SQL sử dụng tiền tố `N
 clinic/
   README.md                        # Hướng dẫn này
   compose.yaml                     # SQL Server, migration, kiểm tra và FastAPI
+  Dockerfile                       # Python + Microsoft ODBC Driver 18
+  pyproject.toml / uv.lock         # Dependencies Python đã khóa phiên bản
   .env.example                     # Mẫu biến môi trường, không có mật khẩu thật
   .env                             # Cấu hình riêng, sinh cục bộ và không commit
-  database/
+  API/                             # FastAPI entrypoint, route và dependency
+    routes/                        # Endpoint xác thực, quản trị và health check
+  BLL/                             # Business Logic Layer: xử lý nghiệp vụ
+  DAL/                             # Data Access Layer: pyodbc và repository SQL
+  Model/                           # Pydantic request/response schemas
+  Core/                            # Cấu hình, JWT, lỗi và logging dùng chung
+  CLI/                             # Lệnh quản trị chạy trong container
+  Tests/                           # Unit test và integration test
+  Database/
     migrations/
       001_initial_schema.sql       # Schema theo ERD
       002_reference_data.sql       # Vai trò, quyền và danh mục ban đầu
@@ -179,12 +189,10 @@ clinic/
     check.ps1                      # Chạy bộ kiểm tra database
     test.ps1                       # Lint và test backend với database thật
     migrate.sh                     # Runner migration trong container
-  backend/
-    app/                           # FastAPI, raw SQL repository, JWT và RBAC
-    tests/                         # Unit test và integration test
-    Dockerfile                    # Python + Microsoft ODBC Driver 18
-    pyproject.toml / uv.lock       # Dependencies Python đã khóa phiên bản
+  docs/                            # Master Plan, SRS, Use Case và ERD
 ```
+
+Luồng phụ thuộc chính là `API → BLL → DAL`. `API` nhận và trả HTTP, `BLL` xử lý quy tắc nghiệp vụ, còn `DAL` thực hiện câu lệnh SQL bằng `pyodbc`. `Model` định nghĩa dữ liệu vào/ra; `Core` cung cấp thành phần dùng chung và không chứa nghiệp vụ phòng khám.
 
 ## 9. Xử lý lỗi thường gặp
 

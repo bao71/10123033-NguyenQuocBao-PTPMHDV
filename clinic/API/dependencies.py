@@ -8,13 +8,13 @@ import pyodbc
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 
-from app.core.config import Settings, get_settings
-from app.core.errors import AppError, AuthenticationError, PermissionDeniedError
-from app.core.security import decode_access_token
-from app.db import get_db
-from app.repositories.auth_repository import AuthRepository
-from app.schemas.auth import UserResponse
-from app.services.auth_service import RequestMetadata
+from BLL.auth_service import RequestMetadata
+from Core.config import Settings, get_settings
+from Core.errors import AppError, AuthenticationError, PermissionDeniedError
+from Core.security import decode_access_token
+from DAL.auth_repository import AuthRepository
+from DAL.db import get_db
+from Model.auth import UserResponse
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 DatabaseConnection = Annotated[pyodbc.Connection, Depends(get_db)]

@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-CLINIC_ROOT = Path(__file__).resolve().parents[3]
+CLINIC_ROOT = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):

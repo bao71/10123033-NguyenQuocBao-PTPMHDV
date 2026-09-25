@@ -15,7 +15,7 @@ x-client: &sql-client
     sqlserver:
       condition: service_healthy
   volumes:
-    - ./database:/workspace/database:ro
+    - ./Database:/workspace/Database:ro
     - ./scripts:/workspace/scripts:ro
 
 services:
@@ -50,12 +50,12 @@ services:
     <<: *sql-client
     profiles: [tools]
     entrypoint: [/opt/mssql-tools18/bin/sqlcmd]
-    command: [-S, sqlserver, -U, sa, -d, ClinicManagement, -C, -b, -r1, -I, -x, -f, "65001", -i, /workspace/database/checks/verify.sql]
+    command: [-S, sqlserver, -U, sa, -d, ClinicManagement, -C, -b, -r1, -I, -x, -f, "65001", -i, /workspace/Database/checks/verify.sql]
     restart: "no"
 
   api:
     build:
-      context: ./backend
+      context: .
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_SECRET_KEY: ${APP_SECRET_KEY:?Run scripts/setup.ps1 to create .env first}

@@ -8,10 +8,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.router import api_router
-from app.core.config import get_settings
-from app.core.errors import AppError
-from app.core.logging import configure_logging
+from API.router import api_router
+from Core.config import get_settings
+from Core.errors import AppError
+from Core.logging import configure_logging
 
 configure_logging()
 logger = logging.getLogger("clinic.api")

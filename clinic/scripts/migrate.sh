@@ -37,7 +37,7 @@ IF OBJECT_ID(N'dbo.schema_migrations', N'U') IS NULL
 COMMIT;"
 
 shopt -s nullglob
-files=(/workspace/database/migrations/*.sql)
+files=(/workspace/Database/migrations/*.sql)
 if ((${#files[@]} == 0)); then
     echo 'No migration files found.' >&2
     exit 1

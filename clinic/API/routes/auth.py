@@ -3,14 +3,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.dependencies import (
+from API.dependencies import (
     AppSettings,
     CurrentUser,
     DatabaseConnection,
     enforce_auth_rate_limit,
     request_metadata,
 )
-from app.schemas.auth import (
+from BLL.auth_service import AuthService
+from Model.auth import (
     LogoutRequest,
     MessageResponse,
     RefreshRequest,
@@ -18,7 +19,6 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
-from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

@@ -2,10 +2,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependencies import DatabaseConnection, RequirePermissions
-from app.repositories.user_repository import UserRepository
-from app.schemas.auth import UserResponse
-from app.schemas.users import UserListResponse
+from API.dependencies import DatabaseConnection, RequirePermissions
+from DAL.user_repository import UserRepository
+from Model.auth import UserResponse
+from Model.users import UserListResponse
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
 

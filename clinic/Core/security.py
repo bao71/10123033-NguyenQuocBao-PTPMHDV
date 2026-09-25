@@ -8,8 +8,8 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 
-from app.core.config import Settings
-from app.core.errors import AuthenticationError
+from Core.config import Settings
+from Core.errors import AuthenticationError
 
 password_hash = PasswordHash.recommended()
 DUMMY_PASSWORD_HASH = password_hash.hash("invalid-password-used-only-for-timing-protection")

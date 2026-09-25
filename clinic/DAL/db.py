@@ -2,7 +2,7 @@ from collections.abc import Generator
 
 import pyodbc
 
-from app.core.config import get_settings
+from Core.config import get_settings
 
 pyodbc.pooling = True
 

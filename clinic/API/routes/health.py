@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.db import database_is_ready
+from DAL.db import database_is_ready
 
 router = APIRouter(prefix="/health", tags=["Operations"])
 

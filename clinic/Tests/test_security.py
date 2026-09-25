@@ -2,9 +2,9 @@ from uuid import UUID
 
 from pydantic import SecretStr
 
-from app.core.config import get_settings
-from app.core.errors import AuthenticationError, PermissionDeniedError
-from app.core.security import (
+from Core.config import get_settings
+from Core.errors import AuthenticationError, PermissionDeniedError
+from Core.security import (
     create_access_token,
     decode_access_token,
     hash_password,
