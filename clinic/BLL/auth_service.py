@@ -1,3 +1,4 @@
+import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
@@ -49,7 +50,9 @@ class AuthService:
     def _issue_tokens(
         self, connection: pyodbc.Connection, user: UserRecord
     ) -> TokenResponse:
-        access_token, expires_in = create_access_token(user.user_id, user.role, self.settings)
+        access_token, expires_in = create_access_token(
+            user.user_id, user.role, self.settings, user.auth_version
+        )
         refresh_token, refresh_hash = create_refresh_token()
         expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
             days=self.settings.refresh_token_days
@@ -237,6 +240,76 @@ class AuthService:
                 request_id=metadata.request_id,
             )
             connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+
+    def request_password_reset(
+        self, connection: pyodbc.Connection, email: str, metadata: RequestMetadata
+    ) -> tuple[str, str] | None:
+        user = self.repository.find_by_login(connection, email.strip().lower())
+        if user is None or not user.is_active or not user.email:
+            return None
+
+        token = secrets.token_urlsafe(48)
+        token_hash = hash_refresh_token(token)
+        expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
+            minutes=self.settings.password_reset_minutes
+        )
+        try:
+            self.repository.invalidate_password_reset_tokens(connection, user.user_id)
+            self.repository.insert_password_reset_token(
+                connection, user.user_id, token_hash, expires_at
+            )
+            self.repository.audit(
+                connection,
+                action="auth.password_reset_requested",
+                entity_type="users",
+                actor_user_id=None,
+                entity_id=user.user_id,
+                after=None,
+                ip_address=metadata.ip_address,
+                user_agent=metadata.user_agent,
+                request_id=metadata.request_id,
+            )
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        return user.email, token
+
+    def reset_password(
+        self, connection: pyodbc.Connection, token: str, new_password: str,
+        metadata: RequestMetadata,
+    ) -> None:
+        try:
+            user_id = self.repository.lock_password_reset_token(
+                connection, hash_refresh_token(token)
+            )
+            if user_id is None:
+                connection.rollback()
+                raise AppError(
+                    400, "INVALID_RESET_TOKEN", "Mã đặt lại không hợp lệ hoặc đã hết hạn."
+                )
+            self.repository.update_password_after_reset(
+                connection, user_id, hash_password(new_password)
+            )
+            self.repository.invalidate_password_reset_tokens(connection, user_id)
+            self.repository.revoke_all_refresh_tokens(connection, user_id)
+            self.repository.audit(
+                connection,
+                action="auth.password_reset",
+                entity_type="users",
+                actor_user_id=user_id,
+                entity_id=user_id,
+                after=None,
+                ip_address=metadata.ip_address,
+                user_agent=metadata.user_agent,
+                request_id=metadata.request_id,
+            )
+            connection.commit()
+        except AppError:
+            raise
         except Exception:
             connection.rollback()
             raise

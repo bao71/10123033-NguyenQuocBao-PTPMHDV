@@ -108,11 +108,15 @@ Các endpoint xác thực hiện có:
 | `POST` | `/api/v1/auth/register` | Đăng ký tài khoản và hồ sơ Bệnh nhân |
 | `POST` | `/api/v1/auth/login` | Đăng nhập OAuth2 form, nhận access JWT và refresh token |
 | `POST` | `/api/v1/auth/refresh` | Xoay vòng refresh token và cấp access token mới |
+| `POST` | `/api/v1/auth/forgot-password` | Yêu cầu mã đặt lại mật khẩu qua email |
+| `POST` | `/api/v1/auth/reset-password` | Đặt mật khẩu mới bằng mã trong email |
 | `POST` | `/api/v1/auth/logout` | Thu hồi một hoặc toàn bộ phiên đăng nhập |
 | `GET` | `/api/v1/auth/me` | Xem tài khoản, vai trò và quyền hiện tại |
 | `GET` | `/api/v1/admin/users` | Danh sách tài khoản; yêu cầu quyền `users.read` |
 
 Access token được ký bằng khóa riêng trong `.env` và hết hạn sau 30 phút. Refresh token chỉ lưu dạng SHA-256 trong database. Mật khẩu dùng Argon2; đăng nhập sai 5 lần khóa tài khoản 15 phút. Quyền được đọc trực tiếp từ `role_permissions` ở mỗi yêu cầu nên thay đổi RBAC có hiệu lực ngay.
+
+Để thử quên mật khẩu, đăng ký một tài khoản bằng email của bạn rồi gọi `POST /api/v1/auth/forgot-password` với `{"email":"..."}` trong Swagger. Mở **MailHog tại `http://127.0.0.1:8025`** để lấy mã trong thư, sau đó gọi `POST /api/v1/auth/reset-password` với `{"token":"...","new_password":"..."}`. Mã hết hạn sau 30 phút, chỉ dùng một lần; mọi phiên đăng nhập cũ của tài khoản sẽ bị thu hồi. Phản hồi của bước yêu cầu mã giống nhau cho email tồn tại và không tồn tại. MailHog chỉ giữ thư trong bộ nhớ để thử nghiệm cục bộ; cấu hình SMTP thực tế cần có khi triển khai bên ngoài Docker.
 
 Tạo tài khoản Admin đầu tiên bằng lệnh tương tác sau; mật khẩu được nhập ẩn và không xuất hiện trên command line:
 
@@ -181,6 +185,8 @@ clinic/
       001_initial_schema.sql       # Schema theo ERD
       002_reference_data.sql       # Vai trò, quyền và danh mục ban đầu
       003_runtime_security.sql     # Quyền SQL cho principal ứng dụng
+      004_auth_version.sql         # Thu hồi access token cũ khi đặt lại mật khẩu
+      005_auth_version_check.sql   # Bảo đảm phiên bản xác thực không âm
     checks/
       verify.sql                   # Kiểm tra database
   scripts/

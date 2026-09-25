@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     login_max_failures: int = 5
     login_lock_minutes: int = 15
     auth_rate_limit_per_minute: int = 20
+    password_reset_minutes: int = 30
+    smtp_host: str = "mailhog"
+    smtp_port: int = 1025
+    smtp_from: str = "clinic@example.local"
 
     @field_validator("app_secret_key")
     @classmethod

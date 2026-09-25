@@ -68,7 +68,12 @@ def get_current_user(
     claims = decode_access_token(token, settings)
     repository = AuthRepository()
     user = repository.find_by_id(connection, claims.user_id)
-    if user is None or not user.is_active or user.is_locked:
+    if (
+        user is None
+        or not user.is_active
+        or user.is_locked
+        or user.auth_version != claims.auth_version
+    ):
         raise AuthenticationError("Tài khoản không còn khả dụng.")
     return UserResponse(
         user_id=user.user_id,

@@ -20,6 +20,7 @@ class AccessTokenClaims:
     user_id: UUID
     role: str
     token_id: UUID
+    auth_version: int
 
 
 def hash_password(password: str) -> str:
@@ -32,7 +33,9 @@ def verify_password(password: str, stored_hash: str | None) -> bool:
     return bool(stored_hash) and valid
 
 
-def create_access_token(user_id: UUID, role: str, settings: Settings) -> tuple[str, int]:
+def create_access_token(
+    user_id: UUID, role: str, settings: Settings, auth_version: int = 0
+) -> tuple[str, int]:
     now = datetime.now(timezone.utc)
     expires = now + timedelta(minutes=settings.jwt_access_minutes)
     payload = {
@@ -40,6 +43,7 @@ def create_access_token(user_id: UUID, role: str, settings: Settings) -> tuple[s
         "role": role,
         "type": "access",
         "jti": str(uuid4()),
+        "ver": auth_version,
         "iat": now,
         "nbf": now,
         "exp": expires,
@@ -62,14 +66,17 @@ def decode_access_token(token: str, settings: Settings) -> AccessTokenClaims:
             algorithms=[settings.jwt_algorithm],
             audience=settings.jwt_audience,
             issuer=settings.jwt_issuer,
-            options={"require": ["sub", "role", "type", "jti", "iat", "nbf", "exp"]},
+            options={"require": ["sub", "role", "type", "jti", "ver", "iat", "nbf", "exp"]},
         )
         if payload["type"] != "access":
+            raise AuthenticationError()
+        if not isinstance(payload["ver"], int) or payload["ver"] < 0:
             raise AuthenticationError()
         return AccessTokenClaims(
             user_id=UUID(payload["sub"]),
             role=str(payload["role"]),
             token_id=UUID(payload["jti"]),
+            auth_version=payload["ver"],
         )
     except (InvalidTokenError, KeyError, TypeError, ValueError) as exc:
         raise AuthenticationError("Access token không hợp lệ hoặc đã hết hạn.") from exc

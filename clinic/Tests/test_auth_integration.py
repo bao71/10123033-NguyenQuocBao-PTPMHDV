@@ -1,3 +1,8 @@
+import json
+import re
+from email import policy
+from email.parser import Parser
+from urllib.request import urlopen
 from uuid import UUID, uuid4
 
 import pytest
@@ -36,6 +41,10 @@ def _soft_delete_test_users(user_ids: list[UUID]) -> None:
 
 def _create_admin(username: str, email: str, password: str) -> UUID:
     return create_admin(username, email, password)
+
+
+def _mail_body(message: dict) -> str:
+    return Parser(policy=policy.default).parsestr(message["Raw"]["Data"]).get_content()
 
 
 @pytest.mark.integration
@@ -137,5 +146,126 @@ def test_authentication_refresh_logout_and_rbac() -> None:
                 json={"refresh_token": refreshed.json()["refresh_token"]},
             )
             assert after_logout.status_code == 401
+        finally:
+            _soft_delete_test_users(created_users)
+
+
+@pytest.mark.integration
+def test_password_reset_email_expiry_reuse_and_session_revocation() -> None:
+    suffix = uuid4().hex[:12]
+    username = f"reset_{suffix}"
+    email = f"{username}@example.com"
+    old_password = "Old-Password!2026"
+    new_password = "New-Password!2026"
+    created_users: list[UUID] = []
+
+    with TestClient(app) as client:
+        try:
+            registered = client.post(
+                "/api/v1/auth/register",
+                json={
+                    "username": username,
+                    "email": email,
+                    "password": old_password,
+                    "full_name": "Bệnh nhân đặt lại mật khẩu",
+                },
+            )
+            assert registered.status_code == 201, registered.text
+            created_users.append(UUID(registered.json()["user"]["user_id"]))
+            old_tokens = registered.json()
+
+            missing = client.post(
+                "/api/v1/auth/forgot-password",
+                json={"email": f"missing_{suffix}@example.com"},
+            )
+            requested = client.post(
+                "/api/v1/auth/forgot-password", json={"email": email}
+            )
+            assert missing.status_code == requested.status_code == 200
+            assert missing.json() == requested.json()
+            with urlopen("http://mailhog:8025/api/v2/messages", timeout=5) as response:
+                messages = json.load(response)["items"]
+            matching = [
+                item for item in messages
+                if email in item["Content"]["Headers"].get("To", [])
+            ]
+            assert len(matching) == 1
+            body = _mail_body(matching[0])
+            token = re.search(
+                r"Mã đặt lại: ([A-Za-z0-9_-]+)", body
+            ).group(1)
+
+            invalid = client.post(
+                "/api/v1/auth/reset-password",
+                json={"token": "x" * 64, "new_password": new_password},
+            )
+            assert invalid.status_code == 400
+
+            connection = connect()
+            try:
+                connection.execute(
+                    "UPDATE dbo.password_reset_tokens SET "
+                    "created_at = DATEADD(HOUR, -1, SYSUTCDATETIME()), expires_at = "
+                    "DATEADD(SECOND, -1, SYSUTCDATETIME()) "
+                    "WHERE user_id = ? AND used_at IS NULL",
+                    str(created_users[0]),
+                )
+                connection.commit()
+            finally:
+                connection.close()
+            expired = client.post(
+                "/api/v1/auth/reset-password",
+                json={"token": token, "new_password": new_password},
+            )
+            assert expired.status_code == 400
+
+            requested_again = client.post(
+                "/api/v1/auth/forgot-password", json={"email": email}
+            )
+            assert requested_again.status_code == 200
+            with urlopen("http://mailhog:8025/api/v2/messages", timeout=5) as response:
+                messages = json.load(response)["items"]
+            matching = [
+                item for item in messages
+                if email in item["Content"]["Headers"].get("To", [])
+            ]
+            assert len(matching) == 2
+            body = _mail_body(matching[0])
+            fresh_token = re.search(
+                r"Mã đặt lại: ([A-Za-z0-9_-]+)", body
+            ).group(1)
+            assert fresh_token != token
+
+            reset = client.post(
+                "/api/v1/auth/reset-password",
+                json={"token": fresh_token, "new_password": new_password},
+            )
+            assert reset.status_code == 200, reset.text
+            reused = client.post(
+                "/api/v1/auth/reset-password",
+                json={"token": fresh_token, "new_password": new_password},
+            )
+            assert reused.status_code == 400
+
+            old_access = client.get(
+                "/api/v1/auth/me",
+                headers={"Authorization": f"Bearer {old_tokens['access_token']}"},
+            )
+            assert old_access.status_code == 401
+            old_refresh = client.post(
+                "/api/v1/auth/refresh",
+                json={"refresh_token": old_tokens["refresh_token"]},
+            )
+            assert old_refresh.status_code == 401
+            old_login = client.post(
+                "/api/v1/auth/login",
+                data={"username": username, "password": old_password},
+            )
+            assert old_login.status_code == 401
+            new_login = client.post(
+                "/api/v1/auth/login",
+                data={"username": username, "password": new_password},
+            )
+            assert new_login.status_code == 200, new_login.text
         finally:
             _soft_delete_test_users(created_users)

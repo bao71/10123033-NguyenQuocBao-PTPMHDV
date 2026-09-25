@@ -20,6 +20,7 @@ class UserRecord:
     patient_id: UUID | None
     patient_code: str | None
     full_name: str | None
+    auth_version: int
 
 
 class AuthRepository:
@@ -38,13 +39,14 @@ class AuthRepository:
             patient_id=UUID(str(row.patient_id)) if row.patient_id else None,
             patient_code=row.patient_code,
             full_name=row.full_name,
+            auth_version=int(row.auth_version),
         )
 
     def find_by_login(self, connection: pyodbc.Connection, login: str) -> UserRecord | None:
         row = connection.execute(
             """
             SELECT TOP (1)
-                u.user_id, u.username, u.email, u.phone, u.password_hash,
+                u.user_id, u.username, u.email, u.phone, u.password_hash, u.auth_version,
                 r.code AS role, u.is_active, u.created_at,
                 CONVERT(bit, CASE WHEN u.locked_until > SYSUTCDATETIME()
                             THEN 1 ELSE 0 END) AS is_locked,
@@ -63,7 +65,7 @@ class AuthRepository:
         row = connection.execute(
             """
             SELECT
-                u.user_id, u.username, u.email, u.phone, u.password_hash,
+                u.user_id, u.username, u.email, u.phone, u.password_hash, u.auth_version,
                 r.code AS role, u.is_active, u.created_at,
                 CONVERT(bit, CASE WHEN u.locked_until > SYSUTCDATETIME()
                             THEN 1 ELSE 0 END) AS is_locked,
@@ -256,6 +258,59 @@ class AuthRepository:
             SET revoked_at = COALESCE(revoked_at, SYSUTCDATETIME())
             WHERE user_id = ? AND revoked_at IS NULL;
             """,
+            str(user_id),
+        )
+
+    @staticmethod
+    def invalidate_password_reset_tokens(connection: pyodbc.Connection, user_id: UUID) -> None:
+        connection.execute(
+            "UPDATE dbo.password_reset_tokens SET used_at = SYSUTCDATETIME() "
+            "WHERE user_id = ? AND used_at IS NULL",
+            str(user_id),
+        )
+
+    @staticmethod
+    def insert_password_reset_token(
+        connection: pyodbc.Connection, user_id: UUID, token_hash: str, expires_at: datetime
+    ) -> None:
+        connection.execute(
+            "INSERT INTO dbo.password_reset_tokens(user_id, token_hash, expires_at) "
+            "VALUES(?, ?, ?)",
+            str(user_id),
+            token_hash,
+            expires_at,
+        )
+
+    @staticmethod
+    def lock_password_reset_token(connection: pyodbc.Connection, token_hash: str) -> UUID | None:
+        row = connection.execute(
+            """
+            SELECT reset_item.user_id
+            FROM dbo.password_reset_tokens AS reset_item WITH (UPDLOCK, HOLDLOCK)
+            JOIN dbo.users AS user_item ON user_item.user_id = reset_item.user_id
+            WHERE reset_item.token_hash = ?
+              AND reset_item.used_at IS NULL
+              AND reset_item.expires_at > SYSUTCDATETIME()
+              AND user_item.is_active = 1
+              AND user_item.deleted_at IS NULL
+            """,
+            token_hash,
+        ).fetchone()
+        return UUID(str(row.user_id)) if row else None
+
+    @staticmethod
+    def update_password_after_reset(
+        connection: pyodbc.Connection, user_id: UUID, new_password_hash: str
+    ) -> None:
+        connection.execute(
+            """
+            UPDATE dbo.users
+            SET password_hash = ?, auth_version = auth_version + 1,
+                failed_login_count = 0, locked_until = NULL,
+                updated_at = SYSUTCDATETIME()
+            WHERE user_id = ? AND is_active = 1 AND deleted_at IS NULL
+            """,
+            new_password_hash,
             str(user_id),
         )
 

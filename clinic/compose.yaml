@@ -19,6 +19,12 @@ x-client: &sql-client
     - ./scripts:/workspace/scripts:ro
 
 services:
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "127.0.0.1:${MAILHOG_PORT:-8025}:8025"
+    restart: unless-stopped
+
   sqlserver:
     <<: *sql-image
     environment:
@@ -68,9 +74,14 @@ services:
       DB_DRIVER: ODBC Driver 18 for SQL Server
       DB_ENCRYPT: "yes"
       DB_TRUST_SERVER_CERTIFICATE: "yes"
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      SMTP_FROM: ${SMTP_FROM:-clinic@example.local}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
+      mailhog:
+        condition: service_started
       sqlserver:
         condition: service_healthy
       db-init:
