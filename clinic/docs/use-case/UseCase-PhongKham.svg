@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1700" viewBox="0 0 1840 1700"><rect width="1840" height="1700" fill="white"/><style>text{font-family:Arial,sans-serif;fill:#172033}.uc{font-size:22px;text-anchor:middle}.actor{font-size:25px;font-weight:bold;text-anchor:middle}</style><text x="920" y="54" text-anchor="middle" font-size="32" font-weight="bold">USE CASE TỔNG QUÁT – QUẢN LÝ PHÒNG KHÁM</text><text x="920" y="90" text-anchor="middle" font-size="19" fill="#64748B">5 vai trò và các chức năng nghiệp vụ chính</text><rect x="285" y="125" width="1255" height="1440" rx="0" fill="#FFFFFF" stroke="#334155" stroke-width="2"/><text x="912" y="166" text-anchor="middle" font-size="24" font-weight="bold">Hệ thống quản lý phòng khám</text>
+<path d="M 130 365 L 325 235" stroke="#2563EB" stroke-width="1.8" fill="none"/>
+<path d="M 130 365 L 325 365" stroke="#2563EB" stroke-width="1.8" fill="none"/>
+<path d="M 130 365 L 325 495" stroke="#2563EB" stroke-width="1.8" fill="none"/>
+<path d="M 130 785 L 325 655" stroke="#0F766E" stroke-width="1.8" fill="none"/>
+<path d="M 130 785 L 248 725 L 248 235 L 325 235" stroke="#0F766E" stroke-width="1.8" fill="none"/>
+<path d="M 130 785 L 325 785" stroke="#0F766E" stroke-width="1.8" fill="none"/>
+<path d="M 130 785 L 325 915" stroke="#0F766E" stroke-width="1.8" fill="none"/>
+<path d="M 1710 495 L 1490 235" stroke="#7C3AED" stroke-width="1.8" fill="none"/>
+<path d="M 1710 495 L 1490 365" stroke="#7C3AED" stroke-width="1.8" fill="none"/>
+<path d="M 1710 495 L 1490 495" stroke="#7C3AED" stroke-width="1.8" fill="none"/>
+<path d="M 1710 495 L 1490 625" stroke="#7C3AED" stroke-width="1.8" fill="none"/>
+<path d="M 1710 495 L 1490 755" stroke="#7C3AED" stroke-width="1.8" fill="none"/>
+<path d="M 1710 1180 L 1490 1050" stroke="#B45309" stroke-width="1.8" fill="none"/>
+<path d="M 1710 1180 L 1490 1180" stroke="#B45309" stroke-width="1.8" fill="none"/>
+<path d="M 1710 1180 L 1490 1310" stroke="#B45309" stroke-width="1.8" fill="none"/>
+<path d="M 130 1295 L 325 1115" stroke="#475569" stroke-width="1.8" fill="none"/>
+<path d="M 130 1295 L 325 1235" stroke="#475569" stroke-width="1.8" fill="none"/>
+<path d="M 130 1295 L 325 1355" stroke="#475569" stroke-width="1.8" fill="none"/>
+<path d="M 130 1295 L 325 1475" stroke="#475569" stroke-width="1.8" fill="none"/>
+<ellipse cx="585" cy="235" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="242"><tspan x="585" dy="0">Đặt / đổi / hủy lịch hẹn</tspan></text>
+<ellipse cx="585" cy="365" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="358"><tspan x="585" dy="0">Xem hồ sơ và đơn thuốc</tspan><tspan x="585" dy="28">của bản thân</tspan></text>
+<ellipse cx="585" cy="495" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="502"><tspan x="585" dy="0">Nhận nhắc lịch email</tspan></text>
+<ellipse cx="585" cy="655" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="648"><tspan x="585" dy="0">Quản lý thông tin</tspan><tspan x="585" dy="28">hành chính bệnh nhân</tspan></text>
+<ellipse cx="585" cy="785" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="792"><tspan x="585" dy="0">Tiếp nhận bệnh nhân</tspan></text>
+<ellipse cx="585" cy="915" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="922"><tspan x="585" dy="0">Thu phí và xuất hóa đơn</tspan></text>
+<ellipse cx="1230" cy="235" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="242"><tspan x="1230" dy="0">Xem lịch và danh sách khám</tspan></text>
+<ellipse cx="1230" cy="365" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="358"><tspan x="1230" dy="0">Xem / cập nhật bệnh án</tspan><tspan x="1230" dy="28">và tiền sử</tspan></text>
+<ellipse cx="1230" cy="495" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="488"><tspan x="1230" dy="0">Chỉ định / ghi nhận</tspan><tspan x="1230" dy="28">kết quả cận lâm sàng</tspan></text>
+<ellipse cx="1230" cy="625" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="618"><tspan x="1230" dy="0">Ghi chẩn đoán</tspan><tspan x="1230" dy="28">và hướng điều trị</tspan></text>
+<ellipse cx="1230" cy="755" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="762"><tspan x="1230" dy="0">Kê đơn thuốc</tspan></text>
+<ellipse cx="1230" cy="1050" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="1057"><tspan x="1230" dy="0">Quản lý danh mục thuốc</tspan></text>
+<ellipse cx="1230" cy="1180" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="1187"><tspan x="1230" dy="0">Nhập thuốc / tra cứu tồn kho</tspan></text>
+<ellipse cx="1230" cy="1310" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="1230" y="1317"><tspan x="1230" dy="0">Xuất thuốc theo đơn</tspan></text>
+<ellipse cx="585" cy="1115" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="1122"><tspan x="585" dy="0">Quản lý tài khoản</tspan></text>
+<ellipse cx="585" cy="1235" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="1242"><tspan x="585" dy="0">Quản lý phân quyền</tspan></text>
+<ellipse cx="585" cy="1355" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="1362"><tspan x="585" dy="0">Tra cứu nhật ký thao tác</tspan></text>
+<ellipse cx="585" cy="1475" rx="260" ry="48" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.6"/>
+<text class="uc" x="585" y="1468"><tspan x="585" dy="0">Xem / xuất doanh thu</tspan><tspan x="585" dy="28">theo bác sĩ</tspan></text>
+<g stroke="#2563EB" stroke-width="4" fill="white" stroke-linecap="round"><circle cx="130" cy="300" r="20"/><path d="M130 320V405 M90 365H170 M130 405L95 460 M130 405L165 460" fill="none"/></g><text class="actor" x="130" y="498" style="fill:#2563EB">Bệnh nhân</text>
+<g stroke="#0F766E" stroke-width="4" fill="white" stroke-linecap="round"><circle cx="130" cy="720" r="20"/><path d="M130 740V825 M90 785H170 M130 825L95 880 M130 825L165 880" fill="none"/></g><text class="actor" x="130" y="918" style="fill:#0F766E">Lễ tân</text>
+<g stroke="#7C3AED" stroke-width="4" fill="white" stroke-linecap="round"><circle cx="1710" cy="430" r="20"/><path d="M1710 450V535 M1670 495H1750 M1710 535L1675 590 M1710 535L1745 590" fill="none"/></g><text class="actor" x="1710" y="628" style="fill:#7C3AED">Bác sĩ</text>
+<g stroke="#B45309" stroke-width="4" fill="white" stroke-linecap="round"><circle cx="1710" cy="1115" r="20"/><path d="M1710 1135V1220 M1670 1180H1750 M1710 1220L1675 1275 M1710 1220L1745 1275" fill="none"/></g><text class="actor" x="1710" y="1313" style="fill:#B45309">Dược sĩ</text>
+<g stroke="#475569" stroke-width="4" fill="white" stroke-linecap="round"><circle cx="130" cy="1230" r="20"/><path d="M130 1250V1335 M90 1295H170 M130 1335L95 1390 M130 1335L165 1390" fill="none"/></g><text class="actor" x="130" y="1428" style="fill:#475569">Admin</text>
+<text x="285" y="1610" font-size="19">Đường nối: vai trò tham gia chức năng, không biểu diễn thứ tự xử lý.</text><text x="285" y="1642" font-size="19">Đăng nhập và kiểm tra quyền là yêu cầu chung. Email nhắc lịch được gửi tự động qua job.</text></svg>

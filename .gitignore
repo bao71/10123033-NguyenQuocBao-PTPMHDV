@@ -1,0 +1,47 @@
+# Legacy car-sales reference project (kept locally)
+/API/
+/BLL/
+/DAL/
+/Database/
+/Model/
+/BanOto.sln
+/BanOto.sql
+
+# Generated document workspace; final deliverables live in clinic/docs
+/outputs/
+/Master Plan.xlsx
+~$*
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build, logs and local databases
+bin/
+obj/
+*.log
+*.mdf
+*.ldf
+*.ndf
+
+# IDE and OS files
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db

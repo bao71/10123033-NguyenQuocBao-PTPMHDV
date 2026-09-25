@@ -1,0 +1,54 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam usecase {
+ BackgroundColor #F8FAFC
+ BorderColor #64748B
+}
+actor "Bệnh nhân" as patient
+actor "Lễ tân" as reception
+actor "Bác sĩ" as doctor
+actor "Dược sĩ" as pharmacy
+actor "Admin" as admin
+rectangle "Hệ thống quản lý phòng khám" {
+  usecase "Đặt / đổi / hủy lịch hẹn" as booking
+  usecase "Xem hồ sơ và đơn thuốc\ncủa bản thân" as ownrecords
+  usecase "Nhận nhắc lịch email" as reminder
+  usecase "Quản lý thông tin\nhành chính bệnh nhân" as patients
+  usecase "Tiếp nhận bệnh nhân" as checkin
+  usecase "Thu phí và xuất hóa đơn" as billing
+  usecase "Xem lịch và danh sách khám" as schedule
+  usecase "Xem / cập nhật bệnh án\nvà tiền sử" as records
+  usecase "Chỉ định / ghi nhận\nkết quả cận lâm sàng" as labs
+  usecase "Ghi chẩn đoán\nvà hướng điều trị" as diagnosis
+  usecase "Kê đơn thuốc" as prescribe
+  usecase "Quản lý danh mục thuốc" as drugs
+  usecase "Nhập thuốc / tra cứu tồn kho" as inventory
+  usecase "Xuất thuốc theo đơn" as dispense
+  usecase "Quản lý tài khoản" as accounts
+  usecase "Quản lý phân quyền" as permissions
+  usecase "Tra cứu nhật ký thao tác" as audit
+  usecase "Xem / xuất doanh thu\ntheo bác sĩ" as revenue
+}
+patient -- booking
+patient -- ownrecords
+patient -- reminder
+reception -- patients
+reception -- booking
+reception -- checkin
+reception -- billing
+doctor -- schedule
+doctor -- records
+doctor -- labs
+doctor -- diagnosis
+doctor -- prescribe
+pharmacy -- drugs
+pharmacy -- inventory
+pharmacy -- dispense
+admin -- accounts
+admin -- permissions
+admin -- audit
+admin -- revenue
+@enduml

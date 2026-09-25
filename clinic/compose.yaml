@@ -1,0 +1,81 @@
+name: clinic-management
+
+x-sql-image: &sql-image
+  image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}
+
+x-client: &sql-client
+  <<: *sql-image
+  environment:
+    SQLCMDSERVER: sqlserver
+    SQLCMDUSER: sa
+    SQLCMDPASSWORD: ${MSSQL_SA_PASSWORD:?Run scripts/setup.ps1 to create .env first}
+    SQLCMDAPPUSER: ${MSSQL_APP_USER:-clinic_app}
+    SQLCMDAPPPASSWORD: ${MSSQL_APP_PASSWORD:?Run scripts/setup.ps1 to create .env first}
+  depends_on:
+    sqlserver:
+      condition: service_healthy
+  volumes:
+    - ./database:/workspace/database:ro
+    - ./scripts:/workspace/scripts:ro
+
+services:
+  sqlserver:
+    <<: *sql-image
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run scripts/setup.ps1 to create .env first}
+      MSSQL_MEMORY_LIMIT_MB: "2048"
+    ports:
+      - "127.0.0.1:${MSSQL_PORT:-14331}:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    mem_limit: 3g
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'SQLCMDPASSWORD="$$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -l 5 -Q "SET NOCOUNT ON; SELECT 1;" > /dev/null'
+      interval: 10s
+      timeout: 8s
+      retries: 18
+      start_period: 30s
+
+  db-init:
+    <<: *sql-client
+    entrypoint: [/bin/bash, /workspace/scripts/migrate.sh]
+    restart: "no"
+
+  db-check:
+    <<: *sql-client
+    profiles: [tools]
+    entrypoint: [/opt/mssql-tools18/bin/sqlcmd]
+    command: [-S, sqlserver, -U, sa, -d, ClinicManagement, -C, -b, -r1, -I, -x, -f, "65001", -i, /workspace/database/checks/verify.sql]
+    restart: "no"
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?Run scripts/setup.ps1 to create .env first}
+      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-http://localhost:4200,http://127.0.0.1:4200}
+      DB_SERVER: sqlserver
+      DB_PORT: "1433"
+      DB_NAME: ClinicManagement
+      DB_USER: ${MSSQL_APP_USER:-clinic_app}
+      DB_PASSWORD: ${MSSQL_APP_PASSWORD:?Run scripts/setup.ps1 to create .env first}
+      DB_DRIVER: ODBC Driver 18 for SQL Server
+      DB_ENCRYPT: "yes"
+      DB_TRUST_SERVER_CERTIFICATE: "yes"
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
