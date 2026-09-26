@@ -147,6 +147,16 @@
       function errorMessage(error) {
         var body = error && error.data;
         if (body && body.error) {
+          if (!vm.user) {
+            var authMessages = {
+              AUTHENTICATION_FAILED: "Incorrect username, email, or password.",
+              ACCOUNT_ALREADY_EXISTS: "This account information is already in use.",
+              INVALID_RESET_TOKEN: "This reset code is invalid or has expired.",
+              RATE_LIMITED: "Too many attempts. Please try again later.",
+              VALIDATION_ERROR: "Please check the information you entered.",
+            };
+            return authMessages[body.error.code] || "We couldn't complete your request. Please try again.";
+          }
           if (body.error.details && angular.isArray(body.error.details)) {
             return body.error.details
               .map(function (detail) {
@@ -156,7 +166,9 @@
           }
           return body.error.message;
         }
-        return "Không thể kết nối tới máy chủ. Vui lòng thử lại.";
+        return vm.user
+          ? "Không thể kết nối tới máy chủ. Vui lòng thử lại."
+          : "Cannot connect to the server. Please try again.";
       }
       function fail(error) {
         vm.error = errorMessage(error);
@@ -317,8 +329,8 @@
           function () {
             return $http.post(apiRoot + "/auth/forgot-password", vm.forgotForm);
           },
-          function (data) {
-            vm.message = data.message;
+          function () {
+            vm.message = "If this email is registered, we have sent a reset code.";
           },
         );
       };
@@ -327,10 +339,10 @@
           function () {
             return $http.post(apiRoot + "/auth/reset-password", vm.resetForm);
           },
-          function (data) {
+          function () {
             vm.authScreen = "login";
             vm.resetForm = {};
-            vm.message = data.message;
+            vm.message = "Password updated. Please sign in again.";
           },
         );
       };

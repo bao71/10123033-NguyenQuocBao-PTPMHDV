@@ -55,40 +55,40 @@
         <div class="auth-wrap" ng-class="'auth-' + vm.authScreen" ng-if="!vm.user">
           <div class="auth-intro" aria-hidden="true">
             <div class="auth-glass-card">
-              <span class="auth-glass-label">KHÔNG GIAN LÀM VIỆC</span>
+              <span class="auth-glass-label">CLINIC WORKSPACE</span>
               <strong>ClinicFlow</strong>
-              <span>Phân quyền cho 5 vai trò</span>
+              <span>Access for five roles</span>
               <div class="auth-glass-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
             </div>
             <div class="auth-hero-copy">
-              <span class="auth-hero-chip"><span></span> QUẢN LÝ PHÒNG KHÁM</span>
-              <h1>Chăm sóc chính xác.<br /><em>Vận hành tinh gọn.</em></h1>
-              <p>Một không gian làm việc rõ ràng cho từng vai trò trong phòng khám.</p>
-              <div class="auth-hero-tags"><span>Tài khoản</span><span>Phân quyền</span><span>Bảo mật</span></div>
+              <span class="auth-hero-chip"><span></span> CLINIC MANAGEMENT</span>
+              <h1>Precision Care,<br /><em>Simplified Operations.</em></h1>
+              <p>A clear clinical workspace designed for every role in your clinic.</p>
+              <div class="auth-hero-tags"><span>Accounts</span><span>Role Permissions</span><span>Secure Access</span></div>
             </div>
           </div>
           <section class="auth-card">
             <div class="auth-card-inner">
               <div class="auth-brand"><span class="auth-brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3v5a5 5 0 0 0 10 0V3M4 3h4m6 0h4M11 13v2a5 5 0 0 0 10 0v-3m-2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>ClinicFlow</span></div>
             <div ng-if="vm.authScreen==='login'">
-              <h2>Chào mừng trở lại</h2>
-              <p class="muted">Đăng nhập để truy cập không gian làm việc của bạn.</p>
+              <h2>Welcome Back</h2>
+              <p class="muted">Please enter your credentials to access your clinic workspace.</p>
               <form ng-submit="vm.login()">
                 <label
-                  >EMAIL HOẶC TÊN TÀI KHOẢN<input
+                  >EMAIL OR USERNAME<input
                     ng-model="vm.loginForm.username"
                     required
                     autocomplete="username"
-                    placeholder="Tên tài khoản / email" /></label
+                    placeholder="Enter your email or username" /></label
                 ><label
-                  >MẬT KHẨU<input
+                  >PASSWORD<input
                     type="password"
                     ng-model="vm.loginForm.password"
                     required
                     autocomplete="current-password"
                     placeholder="••••••••••" /></label
                 ><button class="primary full" ng-disabled="vm.busy">
-                  {{vm.busy ? 'Đang xử lý…' : 'ĐĂNG NHẬP  →'}}
+                  {{vm.busy ? 'PLEASE WAIT…' : 'LOGIN  →'}}
                 </button>
               </form>
               <div class="auth-links">
@@ -96,22 +96,22 @@
                   class="link"
                   ng-click="vm.authScreen='forgot'; vm.clearMessage()"
                 >
-                  Quên mật khẩu?</button
+                  Forgot password?</button
                 ><button
                   class="link"
                   ng-click="vm.authScreen='register'; vm.clearMessage()"
                 >
-                  Tạo tài khoản bệnh nhân
+                  Create a patient account
                 </button>
               </div>
             </div>
             <div ng-if="vm.authScreen==='register'">
-              <span class="auth-form-kicker">DÀNH CHO BỆNH NHÂN</span>
-              <h2>Tạo tài khoản</h2>
-              <p class="muted">Điền thông tin để bắt đầu sử dụng ClinicFlow.</p>
+              <span class="auth-form-kicker">PATIENT REGISTRATION</span>
+              <h2>Create Account</h2>
+              <p class="muted">Enter your details to get started with ClinicFlow.</p>
               <form ng-submit="vm.register()">
                 <label
-                  >Họ tên<input
+                  >FULL NAME<input
                     ng-model="vm.registerForm.full_name"
                     required
                     minlength="2"
@@ -119,24 +119,24 @@
                 /></label>
                 <div class="form-grid">
                   <label
-                    >Tên tài khoản<input
+                    >USERNAME<input
                       ng-model="vm.registerForm.username"
                       required
                       minlength="3"
                       maxlength="50" /></label
                   ><label
-                    >Số điện thoại<input
+                    >PHONE NUMBER<input
                       ng-model="vm.registerForm.phone"
-                      placeholder="Không bắt buộc"
+                      placeholder="Optional"
                   /></label>
                 </div>
                 <label
-                  >Email<input
+                  >EMAIL<input
                     type="email"
                     ng-model="vm.registerForm.email"
                     required /></label
                 ><label
-                  >Mật khẩu <small>(ít nhất 10 ký tự)</small
+                  >PASSWORD <small>(at least 10 characters)</small
                   ><input
                     type="password"
                     ng-model="vm.registerForm.password"
@@ -144,70 +144,69 @@
                     minlength="10"
                     autocomplete="new-password" /></label
                 ><button class="primary full" ng-disabled="vm.busy">
-                  Tạo tài khoản
+                  CREATE ACCOUNT
                 </button>
               </form>
               <button
                 class="link back"
                 ng-click="vm.authScreen='login'; vm.clearMessage()"
               >
-                ← Trở lại đăng nhập
+                ← Back to login
               </button>
             </div>
             <div ng-if="vm.authScreen==='forgot'">
-              <span class="auth-form-kicker">KHÔI PHỤC TÀI KHOẢN</span>
-              <h2>Quên mật khẩu</h2>
+              <span class="auth-form-kicker">ACCOUNT RECOVERY</span>
+              <h2>Forgot Password</h2>
               <p class="muted">
-                Nếu email có trong hệ thống, chúng tôi sẽ gửi hướng dẫn đặt lại
-                mật khẩu.
+                If your email is registered, we will send you a reset code.
               </p>
               <form ng-submit="vm.forgot()">
                 <label
-                  >Email<input
+                  >EMAIL<input
                     type="email"
                     ng-model="vm.forgotForm.email"
                     required /></label
                 ><button class="primary full" ng-disabled="vm.busy">
-                  Gửi hướng dẫn
+                  SEND RESET CODE
                 </button>
               </form>
               <button
                 class="link back"
                 ng-click="vm.authScreen='reset'; vm.clearMessage()"
               >
-                Tôi đã có mã đặt lại →
+                I already have a code →
               </button>
               <button
                 class="link back"
                 ng-click="vm.authScreen='login'; vm.clearMessage()"
               >
-                ← Trở lại đăng nhập
+                ← Back to login
               </button>
             </div>
             <div ng-if="vm.authScreen==='reset'">
-              <span class="auth-form-kicker">KHÔI PHỤC TÀI KHOẢN</span>
-              <h2>Đặt lại mật khẩu</h2>
+              <span class="auth-form-kicker">ACCOUNT RECOVERY</span>
+              <h2>Reset Password</h2>
               <form ng-submit="vm.reset()">
                 <label
-                  >Mã trong email<input
+                  >RESET CODE<input
                     ng-model="vm.resetForm.token"
                     required /></label
                 ><label
-                  >Mật khẩu mới <small>(ít nhất 10 ký tự)</small
+                  >NEW PASSWORD <small>(at least 10 characters)</small
                   ><input
                     type="password"
                     ng-model="vm.resetForm.new_password"
                     required
                     minlength="10" /></label
                 ><button class="primary full" ng-disabled="vm.busy">
-                  Lưu mật khẩu
+                  SAVE NEW PASSWORD
                 </button>
               </form>
               <button
                 class="link back"
                 ng-click="vm.authScreen='login'; vm.clearMessage()"
               >
-                ← Trở lại đăng nhập
+                ← Back to login
               </button>
             </div>
             <div
@@ -217,7 +216,7 @@
             >
               {{vm.error || vm.message}}
             </div>
-            <p class="auth-footnote">Cổng dùng thử nội bộ · Dữ liệu thử nghiệm</p>
+            <p class="auth-footnote">Internal demo portal · Test data only</p>
             </div>
           </section>
         </div>
