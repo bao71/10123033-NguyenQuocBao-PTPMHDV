@@ -30,6 +30,7 @@ COPY Model ./Model
 COPY Core ./Core
 COPY CLI ./CLI
 COPY Tests ./Tests
+COPY Frontend ./Frontend
 RUN useradd --create-home --uid 10001 clinic \
     && chown -R clinic:clinic /app
 

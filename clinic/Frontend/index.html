@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="vi" ng-app="clinicApp">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clinic · Quản lý phòng khám</title>
+    <link rel="stylesheet" href="/app/assets/app.css" />
+  </head>
+  <body ng-controller="ClinicController as vm" ng-cloak>
+    <div class="shell">
+      <aside class="sidebar" ng-if="vm.user">
+        <div class="brand">
+          <span class="brand-mark">✚</span
+          ><span>CLINIC<small>QUẢN LÝ PHÒNG KHÁM</small></span>
+        </div>
+        <div class="sidebar-label">KHÔNG GIAN LÀM VIỆC</div>
+        <button
+          class="nav-item"
+          ng-class="{'selected':vm.screen==='home'}"
+          ng-click="vm.open('home')"
+        >
+          Tổng quan
+        </button>
+        <button
+          class="nav-item"
+          ng-if="vm.can('users.read')"
+          ng-class="{'selected':vm.screen==='users'}"
+          ng-click="vm.open('users')"
+        >
+          Tài khoản
+        </button>
+        <button
+          class="nav-item"
+          ng-if="vm.can('roles.read')"
+          ng-class="{'selected':vm.screen==='roles'}"
+          ng-click="vm.open('roles')"
+        >
+          Phân quyền
+        </button>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-user">
+          <span class="avatar">{{vm.user.username[0] | uppercase}}</span>
+          <div>
+            <strong>{{vm.user.full_name || vm.user.username}}</strong
+            ><small>{{vm.roleName(vm.user.role)}}</small>
+          </div>
+        </div>
+        <button class="nav-item logout" ng-click="vm.logout()">
+          Đăng xuất
+        </button>
+      </aside>
+
+      <main class="main" ng-class="{'auth-main':!vm.user}">
+        <div class="auth-wrap" ng-if="!vm.user">
+          <div class="auth-intro">
+            <span class="eyebrow">CLINIC MANAGEMENT</span>
+            <h1>Chăm sóc tốt hơn,<br /><em>bắt đầu từ tổ chức tốt.</em></h1>
+            <p>
+              Đăng nhập để truy cập không gian làm việc phù hợp với vai trò của
+              bạn.
+            </p>
+            <div class="auth-shapes">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <section class="auth-card">
+            <div class="mobile-brand">✚ CLINIC</div>
+            <div ng-if="vm.authScreen==='login'">
+              <span class="eyebrow">CHÀO MỪNG TRỞ LẠI</span>
+              <h2>Đăng nhập</h2>
+              <p class="muted">Dùng tên tài khoản hoặc email của bạn.</p>
+              <form ng-submit="vm.login()">
+                <label
+                  >Tài khoản hoặc email<input
+                    ng-model="vm.loginForm.username"
+                    required
+                    autocomplete="username"
+                    placeholder="Tên tài khoản / email" /></label
+                ><label
+                  >Mật khẩu<input
+                    type="password"
+                    ng-model="vm.loginForm.password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="••••••••••" /></label
+                ><button class="primary full" ng-disabled="vm.busy">
+                  {{vm.busy ? 'Đang xử lý…' : 'Đăng nhập'}}
+                </button>
+              </form>
+              <div class="auth-links">
+                <button
+                  class="link"
+                  ng-click="vm.authScreen='forgot'; vm.clearMessage()"
+                >
+                  Quên mật khẩu?</button
+                ><button
+                  class="link"
+                  ng-click="vm.authScreen='register'; vm.clearMessage()"
+                >
+                  Đăng ký bệnh nhân
+                </button>
+              </div>
+            </div>
+            <div ng-if="vm.authScreen==='register'">
+              <span class="eyebrow">TÀI KHOẢN BỆNH NHÂN</span>
+              <h2>Đăng ký</h2>
+              <form ng-submit="vm.register()">
+                <label
+                  >Họ tên<input
+                    ng-model="vm.registerForm.full_name"
+                    required
+                    minlength="2"
+                    maxlength="200"
+                /></label>
+                <div class="form-grid">
+                  <label
+                    >Tên tài khoản<input
+                      ng-model="vm.registerForm.username"
+                      required
+                      minlength="3"
+                      maxlength="50" /></label
+                  ><label
+                    >Số điện thoại<input
+                      ng-model="vm.registerForm.phone"
+                      placeholder="Không bắt buộc"
+                  /></label>
+                </div>
+                <label
+                  >Email<input
+                    type="email"
+                    ng-model="vm.registerForm.email"
+                    required /></label
+                ><label
+                  >Mật khẩu <small>(ít nhất 10 ký tự)</small
+                  ><input
+                    type="password"
+                    ng-model="vm.registerForm.password"
+                    required
+                    minlength="10"
+                    autocomplete="new-password" /></label
+                ><button class="primary full" ng-disabled="vm.busy">
+                  Tạo tài khoản
+                </button>
+              </form>
+              <button
+                class="link back"
+                ng-click="vm.authScreen='login'; vm.clearMessage()"
+              >
+                ← Trở lại đăng nhập
+              </button>
+            </div>
+            <div ng-if="vm.authScreen==='forgot'">
+              <span class="eyebrow">KHÔI PHỤC TÀI KHOẢN</span>
+              <h2>Quên mật khẩu</h2>
+              <p class="muted">
+                Nếu email có trong hệ thống, chúng tôi sẽ gửi hướng dẫn đặt lại
+                mật khẩu.
+              </p>
+              <form ng-submit="vm.forgot()">
+                <label
+                  >Email<input
+                    type="email"
+                    ng-model="vm.forgotForm.email"
+                    required /></label
+                ><button class="primary full" ng-disabled="vm.busy">
+                  Gửi hướng dẫn
+                </button>
+              </form>
+              <button
+                class="link back"
+                ng-click="vm.authScreen='login'; vm.clearMessage()"
+              >
+                ← Trở lại đăng nhập
+              </button>
+            </div>
+            <div ng-if="vm.authScreen==='reset'">
+              <span class="eyebrow">KHÔI PHỤC TÀI KHOẢN</span>
+              <h2>Đặt lại mật khẩu</h2>
+              <form ng-submit="vm.reset()">
+                <label
+                  >Mã trong email<input
+                    ng-model="vm.resetForm.token"
+                    required /></label
+                ><label
+                  >Mật khẩu mới <small>(ít nhất 10 ký tự)</small
+                  ><input
+                    type="password"
+                    ng-model="vm.resetForm.new_password"
+                    required
+                    minlength="10" /></label
+                ><button class="primary full" ng-disabled="vm.busy">
+                  Lưu mật khẩu
+                </button>
+              </form>
+              <button
+                class="link back"
+                ng-click="vm.authScreen='login'; vm.clearMessage()"
+              >
+                ← Trở lại đăng nhập
+              </button>
+            </div>
+            <div
+              class="notice"
+              ng-class="{'error':vm.error}"
+              ng-if="vm.message || vm.error"
+            >
+              {{vm.error || vm.message}}
+            </div>
+          </section>
+        </div>
+
+        <div class="workspace" ng-if="vm.user">
+          <header class="topbar">
+            <span
+              >Không gian làm việc / <strong>{{vm.screenTitle()}}</strong></span
+            >
+            <div class="topbar-right">
+              <span class="role-pill">{{vm.roleName(vm.user.role)}}</span
+              ><button class="text-button" ng-click="vm.reloadMe(true)">
+                Làm mới quyền
+              </button>
+            </div>
+          </header>
+          <div class="content">
+            <div
+              class="notice"
+              ng-class="{'error':vm.error}"
+              ng-if="vm.message || vm.error"
+            >
+              {{vm.error || vm.message}}
+              <button
+                class="close"
+                ng-click="vm.clearMessage()"
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+            </div>
+            <section ng-if="vm.screen==='home'">
+              <div class="page-head">
+                <span class="eyebrow"
+                  >{{vm.roleName(vm.user.role) | uppercase}} · TỔNG QUAN</span
+                >
+                <h1>Xin chào, {{vm.user.full_name || vm.user.username}}.</h1>
+                <p>
+                  Những khu vực bạn có quyền truy cập được hiển thị bên dưới.
+                </p>
+              </div>
+              <div class="card-grid">
+                <article
+                  class="feature-card"
+                  ng-repeat="item in vm.visibleModules() track by item.key"
+                >
+                  <span class="feature-icon">{{item.icon}}</span>
+                  <h3>{{item.title}}</h3>
+                  <p>{{item.description}}</p>
+                  <div class="feature-foot">
+                    <span class="status-tag" ng-class="{'ready':item.ready}"
+                      >{{item.ready ? 'Có thể sử dụng' : 'Sắp triển
+                      khai'}}</span
+                    ><button
+                      class="link"
+                      ng-if="item.ready"
+                      ng-click="vm.open(item.key)"
+                    >
+                      Mở →
+                    </button>
+                  </div>
+                </article>
+              </div>
+              <div class="scope-note">
+                <strong>Quyền hiện tại</strong>
+                <p>
+                  Hệ thống kiểm tra lại quyền trên máy chủ ở mỗi yêu cầu. Các
+                  nghiệp vụ chưa triển khai sẽ được mở ở các bước tiếp theo của
+                  Master Plan.
+                </p>
+                <div class="permission-tags">
+                  <span
+                    ng-repeat="permission in vm.user.permissions | limitTo:12 track by permission"
+                    >{{permission}}</span
+                  ><span ng-if="vm.user.permissions.length > 12"
+                    >+{{vm.user.permissions.length-12}} quyền khác</span
+                  >
+                </div>
+              </div>
+            </section>
+
+            <section ng-if="vm.screen==='users' && vm.can('users.read')">
+              <div class="page-head row-head">
+                <div>
+                  <span class="eyebrow">QUẢN TRỊ</span>
+                  <h1>Tài khoản</h1>
+                  <p>Quản lý quyền truy cập của nhân viên và bệnh nhân.</p>
+                </div>
+                <button
+                  class="primary"
+                  ng-if="vm.can('users.create')"
+                  ng-click="vm.showCreate=!vm.showCreate"
+                >
+                  {{vm.showCreate ? 'Đóng biểu mẫu' : '+ Tạo nhân viên'}}
+                </button>
+              </div>
+              <form
+                class="panel create-panel"
+                ng-if="vm.showCreate && vm.can('users.create')"
+                ng-submit="vm.createStaff()"
+              >
+                <h3>Tạo tài khoản nhân viên</h3>
+                <div class="form-grid">
+                  <label
+                    >Vai trò<select ng-model="vm.staff.role" required>
+                      <option value="Receptionist">Lễ tân</option>
+                      <option value="Doctor">Bác sĩ</option>
+                      <option value="Pharmacist">Dược sĩ</option>
+                    </select></label
+                  ><label
+                    >Tên tài khoản<input
+                      ng-model="vm.staff.username"
+                      required
+                      minlength="3"
+                      maxlength="50" /></label
+                  ><label
+                    >Email<input
+                      type="email"
+                      ng-model="vm.staff.email"
+                      required /></label
+                  ><label
+                    >Số điện thoại<input ng-model="vm.staff.phone" /></label
+                  ><label
+                    >Mật khẩu ban đầu<input
+                      type="password"
+                      ng-model="vm.staff.password"
+                      required
+                      minlength="10"
+                      autocomplete="new-password" /></label
+                  ><label ng-if="vm.staff.role==='Doctor'"
+                    >Mã bác sĩ<input
+                      ng-model="vm.staff.doctor_code"
+                      required /></label
+                  ><label ng-if="vm.staff.role==='Doctor'"
+                    >Chuyên khoa<input
+                      ng-model="vm.staff.specialty"
+                      required /></label
+                  ><label ng-if="vm.staff.role==='Doctor'"
+                    >Số chứng chỉ hành nghề<input
+                      ng-model="vm.staff.license_number"
+                  /></label>
+                </div>
+                <button class="primary" ng-disabled="vm.busy">
+                  Lưu tài khoản
+                </button>
+              </form>
+              <div class="panel">
+                <div class="table-toolbar">
+                  <input
+                    aria-label="Tìm tài khoản"
+                    ng-model="vm.userSearch"
+                    ng-keyup="$event.keyCode===13 && vm.loadUsers(1)"
+                    placeholder="Tìm tên, email, số điện thoại"
+                  /><button class="secondary" ng-click="vm.loadUsers(1)">
+                    Tìm kiếm
+                  </button>
+                </div>
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Tài khoản</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        ng-repeat="item in vm.users.items track by item.user_id"
+                      >
+                        <td>
+                          <strong>{{item.username}}</strong
+                          ><small>{{item.email}}</small>
+                        </td>
+                        <td>{{vm.roleName(item.role)}}</td>
+                        <td>
+                          <span
+                            class="status-tag"
+                            ng-class="{'ready':item.is_active}"
+                            >{{item.is_active ? 'Hoạt động' : 'Đã khóa'}}</span
+                          >
+                        </td>
+                        <td>{{item.created_at | date:'dd/MM/yyyy'}}</td>
+                        <td>
+                          <button
+                            class="link"
+                            ng-if="item.is_active && vm.can('users.deactivate') && item.user_id!==vm.user.user_id"
+                            ng-click="vm.changeStatus(item, false)"
+                          >
+                            Khóa</button
+                          ><button
+                            class="link"
+                            ng-if="!item.is_active && vm.can('users.update')"
+                            ng-click="vm.changeStatus(item, true)"
+                          >
+                            Mở khóa
+                          </button>
+                        </td>
+                      </tr>
+                      <tr ng-if="!vm.users.items.length">
+                        <td colspan="5" class="empty">
+                          Không có tài khoản phù hợp.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="pagination">
+                  <span
+                    >{{vm.users.total}} tài khoản · Trang
+                    {{vm.users.page}}</span
+                  >
+                  <div>
+                    <button
+                      class="secondary"
+                      ng-disabled="vm.users.page<=1"
+                      ng-click="vm.loadUsers(vm.users.page-1)"
+                    >
+                      Trước</button
+                    ><button
+                      class="secondary"
+                      ng-disabled="vm.users.page*vm.users.page_size>=vm.users.total"
+                      ng-click="vm.loadUsers(vm.users.page+1)"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section ng-if="vm.screen==='roles' && vm.can('roles.read')">
+              <div class="page-head">
+                <span class="eyebrow">QUẢN TRỊ</span>
+                <h1>Phân quyền</h1>
+                <p>
+                  Chọn vai trò để xem và điều chỉnh quyền theo từng hành động.
+                </p>
+              </div>
+              <div class="role-tabs">
+                <button
+                  ng-repeat="role in vm.roles.roles track by role.code"
+                  ng-class="{'active':vm.selectedRole.code===role.code}"
+                  ng-click="vm.selectRole(role)"
+                >
+                  {{vm.roleName(role.code)}}
+                </button>
+              </div>
+              <div class="panel" ng-if="vm.selectedRole">
+                <div class="role-header">
+                  <div>
+                    <h3>{{vm.roleName(vm.selectedRole.code)}}</h3>
+                    <p>{{vm.selectedRole.description}}</p>
+                  </div>
+                  <span class="counter"
+                    >{{vm.selectedCount()}} /
+                    {{vm.roles.available_permissions.length}} quyền</span
+                  >
+                </div>
+                <div class="table-toolbar">
+                  <input
+                    ng-model="vm.permissionSearch"
+                    placeholder="Tìm quyền theo mã"
+                    aria-label="Tìm quyền"
+                  />
+                </div>
+                <div class="permission-list">
+                  <label
+                    ng-repeat="permission in vm.roles.available_permissions | filter:vm.permissionSearch track by permission"
+                    ><input
+                      type="checkbox"
+                      ng-model="vm.selectedPermissions[permission]"
+                      ng-disabled="!vm.can('roles.update')"
+                    /><span>{{permission}}</span></label
+                  >
+                </div>
+                <div class="panel-footer">
+                  <span class="muted"
+                    >Thay đổi quyền có hiệu lực ở yêu cầu API kế tiếp.</span
+                  ><button
+                    class="primary"
+                    ng-if="vm.can('roles.update')"
+                    ng-disabled="vm.busy"
+                    ng-click="vm.saveRole()"
+                  >
+                    Lưu quyền
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="/app/vendor/angular.min.js"></script>
+    <script src="/app/assets/app.js"></script>
+  </body>
+</html>

@@ -1,5 +1,6 @@
 import logging
 import time
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import pyodbc
@@ -7,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from API.router import api_router
 from Core.config import get_settings
@@ -117,3 +119,8 @@ async def database_error_handler(request: Request, exc: pyodbc.Error) -> JSONRes
 
 
 app.include_router(api_router)
+app.mount(
+    "/app",
+    StaticFiles(directory=Path(__file__).resolve().parents[1] / "Frontend", html=True),
+    name="clinic-app",
+)

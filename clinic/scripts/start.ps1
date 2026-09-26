@@ -20,6 +20,7 @@ try {
     }
     if (-not $ready) { throw 'API did not become ready within 60 seconds.' }
     Write-Host 'API ready: http://127.0.0.1:8000'
+    Write-Host 'Web app:  http://127.0.0.1:8000/app/'
     Write-Host 'Swagger:   http://127.0.0.1:8000/docs'
 } finally {
     Pop-Location

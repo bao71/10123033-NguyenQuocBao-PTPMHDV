@@ -2,7 +2,7 @@
 
 Thư mục `clinic/` chứa phần triển khai mới cho đề tài phòng khám, theo hướng **FastAPI + pyodbc + SQL Server**. Các thư mục C# tại gốc repository là mã tham khảo của dự án cũ. Thiết kế nghiệp vụ dựa trên [SRS và ERD](docs/README.md) đã lưu cùng mã nguồn.
 
-Hiện tại dự án đã có SQL Server, migration, FastAPI, kết nối `pyodbc`, JWT, refresh token và RBAC. Phần đăng ký công khai chỉ tạo tài khoản Bệnh nhân; tài khoản nhân viên do Admin quản lý ở các bước nghiệp vụ tiếp theo.
+Hiện tại dự án đã có SQL Server, migration, FastAPI, kết nối `pyodbc`, JWT, refresh token, RBAC và giao diện AngularJS cho mục 1.5. Đăng ký công khai chỉ tạo tài khoản Bệnh nhân; Admin tạo tài khoản nhân viên sau khi đăng nhập.
 
 ## 1. Chuẩn bị máy
 
@@ -82,7 +82,7 @@ powershell -ExecutionPolicy Bypass -File .\clinic\scripts\check.ps1
 
 Script chạy bộ kiểm tra SQL và thống kê schema. Chỉ coi việc khởi tạo là thành công khi SQL Server healthy, migration kết thúc thành công và bộ kiểm tra không báo lỗi. Có thể đọc trực tiếp nội dung kiểm tra tại [`Database/checks/verify.sql`](Database/checks/verify.sql).
 
-Đây là dữ liệu khởi tạo danh mục: 5 vai trò, các quyền và một số danh mục mẫu. Bộ dữ liệu mô phỏng **ít nhất 2.000 bản ghi** theo yêu cầu BTL sẽ được bổ sung ở bước seed nghiệp vụ; chưa có tài khoản bệnh nhân/bác sĩ để đăng nhập ứng dụng ở giai đoạn này.
+Đây là dữ liệu khởi tạo danh mục: 5 vai trò, các quyền và một số danh mục mẫu. Bộ dữ liệu mô phỏng **ít nhất 2.000 bản ghi** theo yêu cầu BTL sẽ được bổ sung ở bước seed nghiệp vụ; setup không tạo sẵn tài khoản người dùng.
 
 ## 5. Chạy FastAPI và xác thực
 
@@ -96,6 +96,7 @@ Sau khi hoàn tất:
 
 | Thành phần | Địa chỉ |
 | --- | --- |
+| Giao diện | `http://127.0.0.1:8000/app/` |
 | API | `http://127.0.0.1:8000` |
 | Swagger | `http://127.0.0.1:8000/docs` |
 | OpenAPI JSON | `http://127.0.0.1:8000/openapi.json` |
@@ -113,6 +114,10 @@ Các endpoint xác thực hiện có:
 | `POST` | `/api/v1/auth/logout` | Thu hồi một hoặc toàn bộ phiên đăng nhập |
 | `GET` | `/api/v1/auth/me` | Xem tài khoản, vai trò và quyền hiện tại |
 | `GET` | `/api/v1/admin/users` | Danh sách tài khoản; yêu cầu quyền `users.read` |
+| `POST` | `/api/v1/admin/users` | Admin tạo Lễ tân/Bác sĩ/Dược sĩ; quyền `users.create` |
+| `PATCH` | `/api/v1/admin/users/{user_id}/status` | Khóa hoặc mở tài khoản; quyền `users.deactivate` hoặc `users.update` |
+| `GET` | `/api/v1/admin/roles` | Xem 5 vai trò và ma trận quyền; quyền `roles.read` |
+| `PUT` | `/api/v1/admin/roles/{role_code}/permissions` | Lưu quyền của vai trò; quyền `roles.update` |
 
 Access token được ký bằng khóa riêng trong `.env` và hết hạn sau 30 phút. Refresh token chỉ lưu dạng SHA-256 trong database. Mật khẩu dùng Argon2; đăng nhập sai 5 lần khóa tài khoản 15 phút. Quyền được đọc trực tiếp từ `role_permissions` ở mỗi yêu cầu nên thay đổi RBAC có hiệu lực ngay.
 
@@ -124,6 +129,10 @@ Tạo tài khoản Admin đầu tiên bằng lệnh tương tác sau; mật kh�
 Set-Location .\clinic
 docker compose run --rm api python -m CLI.create_admin --username admin --email admin@example.com
 ```
+
+Sau đó mở `/app/` và đăng nhập bằng tài khoản Admin. Trang **Tài khoản** tạo nhân viên (Bác sĩ cần mã bác sĩ và chuyên khoa), tìm tài khoản, khóa/mở tài khoản. Trang **Phân quyền** hiển thị các quyền hành động của cả 5 vai trò và cho phép Admin sửa rồi lưu. Bệnh nhân có thể tự đăng ký trên giao diện. Menu và nút thao tác dựa trên quyền mà `/auth/me` trả về; API cũng kiểm tra quyền trên từng yêu cầu. Khi khóa tài khoản, access token cũ và refresh token đều mất hiệu lực. Không thể tự khóa tài khoản Admin đang đăng nhập hoặc gỡ các quyền quản trị thiết yếu của vai trò Admin.
+
+Các thẻ nghiệp vụ lịch hẹn, bệnh án, nhà thuốc, thu phí và báo cáo trên trang tổng quan hiện ghi **Sắp triển khai**; chưa có màn CRUD hay API nghiệp vụ tương ứng. Giao diện dùng AngularJS 1.8.3 được lưu cùng mã nguồn trong `Frontend/vendor/` để chạy không cần CDN.
 
 Chạy lint, unit test và integration test với SQL Server thật:
 
@@ -177,6 +186,7 @@ clinic/
   BLL/                             # Business Logic Layer: xử lý nghiệp vụ
   DAL/                             # Data Access Layer: pyodbc và repository SQL
   Model/                           # Pydantic request/response schemas
+  Frontend/                        # AngularJS: xác thực, tổng quan và quản trị RBAC
   Core/                            # Cấu hình, JWT, lỗi và logging dùng chung
   CLI/                             # Lệnh quản trị chạy trong container
   Tests/                           # Unit test và integration test
