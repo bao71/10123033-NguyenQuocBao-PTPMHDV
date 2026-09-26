@@ -170,18 +170,29 @@
                   SEND RESET CODE
                 </button>
               </form>
-              <button
-                class="link back"
-                ng-click="vm.authScreen='reset'; vm.clearMessage()"
+              <div
+                class="notice"
+                ng-class="{'error':vm.error}"
+                ng-if="vm.message || vm.error"
               >
-                I already have a code →
-              </button>
-              <button
-                class="link back"
-                ng-click="vm.authScreen='login'; vm.clearMessage()"
-              >
-                ← Back to login
-              </button>
+                {{vm.error || vm.message}}
+              </div>
+              <div class="auth-recovery-actions">
+                <button
+                  type="button"
+                  class="auth-code-button"
+                  ng-click="vm.authScreen='reset'; vm.clearMessage()"
+                >
+                  I already have a code <span aria-hidden="true">→</span>
+                </button>
+                <button
+                  type="button"
+                  class="auth-return-button"
+                  ng-click="vm.authScreen='login'; vm.clearMessage()"
+                >
+                  ← Back to login
+                </button>
+              </div>
             </div>
             <div ng-if="vm.authScreen==='reset'">
               <span class="auth-form-kicker">ACCOUNT RECOVERY</span>
@@ -212,7 +223,7 @@
             <div
               class="notice"
               ng-class="{'error':vm.error}"
-              ng-if="vm.message || vm.error"
+              ng-if="(vm.message || vm.error) && vm.authScreen!=='forgot'"
             >
               {{vm.error || vm.message}}
             </div>
