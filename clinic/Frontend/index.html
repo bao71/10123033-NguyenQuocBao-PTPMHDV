@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Clinic · Quản lý phòng khám</title>
     <link rel="stylesheet" href="/app/assets/app.css" />
+    <link rel="stylesheet" href="/app/assets/auth.css" />
   </head>
   <body ng-controller="ClinicController as vm" ng-cloak>
     <div class="shell">
@@ -51,40 +52,43 @@
       </aside>
 
       <main class="main" ng-class="{'auth-main':!vm.user}">
-        <div class="auth-wrap" ng-if="!vm.user">
-          <div class="auth-intro">
-            <span class="eyebrow">CLINIC MANAGEMENT</span>
-            <h1>Chăm sóc tốt hơn,<br /><em>bắt đầu từ tổ chức tốt.</em></h1>
-            <p>
-              Đăng nhập để truy cập không gian làm việc phù hợp với vai trò của
-              bạn.
-            </p>
-            <div class="auth-shapes">
-              <span></span><span></span><span></span>
+        <div class="auth-wrap" ng-class="'auth-' + vm.authScreen" ng-if="!vm.user">
+          <div class="auth-intro" aria-hidden="true">
+            <div class="auth-glass-card">
+              <span class="auth-glass-label">KHÔNG GIAN LÀM VIỆC</span>
+              <strong>ClinicFlow</strong>
+              <span>Phân quyền cho 5 vai trò</span>
+              <div class="auth-glass-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <div class="auth-hero-copy">
+              <span class="auth-hero-chip"><span></span> QUẢN LÝ PHÒNG KHÁM</span>
+              <h1>Chăm sóc chính xác.<br /><em>Vận hành tinh gọn.</em></h1>
+              <p>Một không gian làm việc rõ ràng cho từng vai trò trong phòng khám.</p>
+              <div class="auth-hero-tags"><span>Tài khoản</span><span>Phân quyền</span><span>Bảo mật</span></div>
             </div>
           </div>
           <section class="auth-card">
-            <div class="mobile-brand">✚ CLINIC</div>
+            <div class="auth-card-inner">
+              <div class="auth-brand"><span class="auth-brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3v5a5 5 0 0 0 10 0V3M4 3h4m6 0h4M11 13v2a5 5 0 0 0 10 0v-3m-2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>ClinicFlow</span></div>
             <div ng-if="vm.authScreen==='login'">
-              <span class="eyebrow">CHÀO MỪNG TRỞ LẠI</span>
-              <h2>Đăng nhập</h2>
-              <p class="muted">Dùng tên tài khoản hoặc email của bạn.</p>
+              <h2>Chào mừng trở lại</h2>
+              <p class="muted">Đăng nhập để truy cập không gian làm việc của bạn.</p>
               <form ng-submit="vm.login()">
                 <label
-                  >Tài khoản hoặc email<input
+                  >EMAIL HOẶC TÊN TÀI KHOẢN<input
                     ng-model="vm.loginForm.username"
                     required
                     autocomplete="username"
                     placeholder="Tên tài khoản / email" /></label
                 ><label
-                  >Mật khẩu<input
+                  >MẬT KHẨU<input
                     type="password"
                     ng-model="vm.loginForm.password"
                     required
                     autocomplete="current-password"
                     placeholder="••••••••••" /></label
                 ><button class="primary full" ng-disabled="vm.busy">
-                  {{vm.busy ? 'Đang xử lý…' : 'Đăng nhập'}}
+                  {{vm.busy ? 'Đang xử lý…' : 'ĐĂNG NHẬP  →'}}
                 </button>
               </form>
               <div class="auth-links">
@@ -97,13 +101,14 @@
                   class="link"
                   ng-click="vm.authScreen='register'; vm.clearMessage()"
                 >
-                  Đăng ký bệnh nhân
+                  Tạo tài khoản bệnh nhân
                 </button>
               </div>
             </div>
             <div ng-if="vm.authScreen==='register'">
-              <span class="eyebrow">TÀI KHOẢN BỆNH NHÂN</span>
-              <h2>Đăng ký</h2>
+              <span class="auth-form-kicker">DÀNH CHO BỆNH NHÂN</span>
+              <h2>Tạo tài khoản</h2>
+              <p class="muted">Điền thông tin để bắt đầu sử dụng ClinicFlow.</p>
               <form ng-submit="vm.register()">
                 <label
                   >Họ tên<input
@@ -150,7 +155,7 @@
               </button>
             </div>
             <div ng-if="vm.authScreen==='forgot'">
-              <span class="eyebrow">KHÔI PHỤC TÀI KHOẢN</span>
+              <span class="auth-form-kicker">KHÔI PHỤC TÀI KHOẢN</span>
               <h2>Quên mật khẩu</h2>
               <p class="muted">
                 Nếu email có trong hệ thống, chúng tôi sẽ gửi hướng dẫn đặt lại
@@ -180,7 +185,7 @@
               </button>
             </div>
             <div ng-if="vm.authScreen==='reset'">
-              <span class="eyebrow">KHÔI PHỤC TÀI KHOẢN</span>
+              <span class="auth-form-kicker">KHÔI PHỤC TÀI KHOẢN</span>
               <h2>Đặt lại mật khẩu</h2>
               <form ng-submit="vm.reset()">
                 <label
@@ -211,6 +216,8 @@
               ng-if="vm.message || vm.error"
             >
               {{vm.error || vm.message}}
+            </div>
+            <p class="auth-footnote">Cổng dùng thử nội bộ · Dữ liệu thử nghiệm</p>
             </div>
           </section>
         </div>

@@ -474,7 +474,12 @@
         saveSession(initialSession);
         vm.reloadMe(false);
       }
-      var token = new URLSearchParams($window.location.search).get("token");
+    var query = new URLSearchParams($window.location.search);
+    var view = query.get("view");
+    if (["register", "forgot", "reset"].indexOf(view) >= 0) {
+      vm.authScreen = view;
+    }
+    var token = query.get("token");
       if (token && !vm.user) {
         vm.authScreen = "reset";
         vm.resetForm.token = token;
