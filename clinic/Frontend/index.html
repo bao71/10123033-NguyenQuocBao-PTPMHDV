@@ -168,6 +168,12 @@
               </form>
               <button
                 class="link back"
+                ng-click="vm.authScreen='reset'; vm.clearMessage()"
+              >
+                Tôi đã có mã đặt lại →
+              </button>
+              <button
+                class="link back"
                 ng-click="vm.authScreen='login'; vm.clearMessage()"
               >
                 ← Trở lại đăng nhập

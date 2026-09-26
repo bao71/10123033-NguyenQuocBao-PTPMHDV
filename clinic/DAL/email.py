@@ -18,7 +18,8 @@ def send_password_reset_email(
         "Bạn đã yêu cầu đặt lại mật khẩu.\n\n"
         f"Mã đặt lại: {token}\n\n"
         f"Mã có hiệu lực trong {settings.password_reset_minutes} phút và chỉ dùng một lần. "
-        "Nhập mã và mật khẩu mới tại POST /api/v1/auth/reset-password. "
+        "Trên giao diện, chọn Quên mật khẩu rồi Tôi đã có mã đặt lại, "
+        "sau đó nhập mã và mật khẩu mới. "
         "Nếu bạn không yêu cầu, hãy bỏ qua email này."
     )
     try:
