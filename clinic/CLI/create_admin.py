@@ -9,6 +9,7 @@ from pydantic import EmailStr, TypeAdapter, ValidationError
 from Core.security import hash_password
 from DAL.auth_repository import AuthRepository
 from DAL.db import connect
+from DAL.procedures import call
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]{3,50}$")
 
@@ -27,12 +28,9 @@ def create_admin(username: str, email: str, password: str) -> UUID:
         duplicate = repository.duplicate_registration_field(connection, username, email, None)
         if duplicate:
             raise ValueError(f"Thông tin {duplicate} đã được sử dụng.")
-        row = connection.execute(
-            """
-            INSERT INTO dbo.users(role_id, username, email, password_hash)
-            OUTPUT inserted.user_id
-            SELECT role_id, ?, ?, ? FROM dbo.roles WHERE code='Admin';
-            """,
+        row = call(
+            connection,
+            "clinic_admin_create",
             username,
             email,
             hash_password(password),

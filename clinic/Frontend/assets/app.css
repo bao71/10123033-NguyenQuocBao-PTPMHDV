@@ -12,7 +12,8 @@ body {
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button {
@@ -322,7 +323,8 @@ label small {
   font-weight: 400;
 }
 input,
-select {
+select,
+textarea {
   display: block;
   width: 100%;
   border: 1px solid #d9e5e3;
@@ -334,7 +336,8 @@ select {
   margin-top: 7px;
 }
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: #36a391;
   box-shadow: 0 0 0 3px #d9f2eb;
 }
@@ -346,6 +349,41 @@ select:focus {
 }
 .table-toolbar input {
   margin: 0;
+}
+.patient-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) repeat(4, minmax(115px, 1fr)) auto;
+  gap: 9px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+.patient-toolbar input,
+.patient-toolbar select {
+  margin: 0;
+  min-width: 0;
+}
+.patient-form-actions,
+.patient-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.patient-actions {
+  white-space: nowrap;
+}
+.patient-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0 22px;
+}
+.patient-info small,
+.patient-info strong {
+  display: block;
+}
+.patient-info small {
+  color: #72878d;
+  margin-bottom: 5px;
 }
 .table-scroll {
   overflow: auto;
@@ -480,6 +518,115 @@ td small {
   border-color: #f2c7bf;
   color: #a63c31;
 }
+.history-panel h3 {
+  margin: 0 0 5px;
+}
+.history-panel .muted {
+  margin: 0;
+}
+.history-filters {
+  display: flex;
+  gap: 9px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin: 20px 0 14px;
+}
+.history-filters select,
+.history-filters input {
+  width: auto;
+  min-width: 170px;
+  margin: 0;
+}
+.history-form {
+  padding: 18px;
+  margin: 16px 0;
+  border-radius: 10px;
+  background: #f4f9f7;
+  border: 1px solid #dcebe7;
+}
+.history-form h4 {
+  margin: 0 0 16px;
+}
+.history-form textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+.history-checkbox {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-top: 17px;
+}
+.history-checkbox input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #177b70;
+}
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+.history-item {
+  padding: 16px;
+  border: 1px solid #e2ecea;
+  border-radius: 10px;
+}
+.history-item h4 {
+  margin: 5px 0 0;
+}
+.history-item p {
+  margin: 10px 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.history-item small {
+  color: #71858a;
+}
+.history-type {
+  color: #147d71;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.history-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+.appointment-toolbar, .appointment-catalog {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.appointment-catalog { margin: 0 0 18px; }
+.appointment-catalog input { flex: 1; min-width: 210px; margin: 0; }
+.booking-form h3, .booking-form h4 { margin: 0 0 12px; }
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 10px;
+  margin: 14px 0 22px;
+}
+.slot-button {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #c4ddd7;
+  border-radius: 9px;
+  background: #f5fbf9;
+  color: #175d54;
+  cursor: pointer;
+}
+.slot-button.selected { background: #137e70; color: white; border-color: #137e70; }
+.slot-button:disabled { background: #edf0ef; color: #8d9b97; cursor: default; }
+.slot-button small { font-size: 11px; }
+.appointment-list, .schedule-list { display: grid; gap: 12px; }
+.appointment-item, .schedule-item { padding: 16px; border: 1px solid #e0eae7; border-radius: 10px; }
+.appointment-item h4 { margin: 12px 0 6px; }
+.appointment-item p, .schedule-item p { margin: 6px 0; white-space: pre-wrap; }
+.appointment-item small, .schedule-item small { color: #71858a; }
 .close {
   float: right;
   background: none;
@@ -586,6 +733,9 @@ td small {
   display: none;
 }
 @media (max-width: 900px) {
+  .patient-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .sidebar {
     width: 205px;
   }
@@ -615,6 +765,10 @@ td small {
   }
 }
 @media (max-width: 650px) {
+  .patient-info,
+  .patient-toolbar {
+    grid-template-columns: 1fr;
+  }
   .shell {
     display: block;
   }
@@ -679,4 +833,54 @@ td small {
   .auth-links {
     flex-wrap: wrap;
   }
+}
+/* Reception uses the existing appointment cards and clinic colors. */
+.reception-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.reception-summary > div {
+  padding: 18px;
+  border: 1px solid #e0e8e7;
+  border-radius: 12px;
+  background: #fff;
+}
+.reception-summary span { display: block; color: #637572; font-size: 12px; }
+.reception-summary strong { display: block; margin-top: 8px; font-size: 28px; }
+.reception-summary .waiting { background: #e8f7f3; border-color: #b9e1d5; color: #176a60; }
+.reception-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  align-items: end;
+  gap: 12px;
+}
+.reception-filters label { margin-bottom: 0; }
+.reception-filters button { margin-bottom: 2px; }
+.reception-note { color: #176a60; font-weight: 600; }
+/* Clinical workspace reuses the existing panels, forms and appointment cards. */
+.clinical-fieldset { border: 0; padding: 0; margin: 22px 0 0; min-width: 0; }
+.clinical-fieldset:disabled input, .clinical-fieldset:disabled textarea { color: #284947; opacity: 1; }
+.clinical-fieldset h4 { margin: 18px 0 12px; }
+.vital-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; }
+.diagnosis-row { display: grid; grid-template-columns: 110px minmax(160px,2fr) minmax(130px,1fr) 85px 35px; gap: 10px; align-items: center; }
+.diagnosis-primary { display: flex; align-items: center; gap: 6px; margin-top: 20px; }
+.diagnosis-primary input { width: auto; }
+.clinical-queue article { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid #e0e8e7; }
+.clinical-queue small { display: block; margin-top: 6px; color: #637572; }
+.clinical-section-head { margin-top: 26px; margin-bottom: 14px; }
+.clinical-history { margin-top: 20px; padding: 16px; border-radius: 10px; background: #f4f8f7; }
+.clinical-history p { margin: 8px 0 0; }
+.clinical-allergy { color: #a04237; font-weight: 600; }
+.clinical-order { border: 1px solid #e0e8e7; border-radius: 10px; padding: 16px; margin-top: 14px; }
+.clinical-subform { padding: 18px; border-radius: 10px; background: #f4f8f7; margin-top: 16px; }
+.clinical-result { border-left: 3px solid #b9e1d5; padding: 2px 14px; margin-top: 16px; }
+.clinical-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.clinical-version { border-bottom: 1px solid #e0e8e7; padding: 14px 0; }
+.clinical-version pre { overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; font-size: 12px; }
+.clinical-version summary { cursor: pointer; color: #176a60; margin-top: 8px; }
+@media (max-width: 900px) {
+  .diagnosis-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .clinical-queue article { flex-wrap: wrap; }
 }

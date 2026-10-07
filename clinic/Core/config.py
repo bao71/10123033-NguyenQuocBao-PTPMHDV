@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 CLINIC_ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +13,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
     app_name: str = "Clinic Management API"
@@ -47,6 +48,26 @@ class Settings(BaseSettings):
     smtp_host: str = "mailhog"
     smtp_port: int = 1025
     smtp_from: str = "clinic@example.local"
+    smtp_username: str | None = None
+    smtp_password: SecretStr = SecretStr("")
+    smtp_starttls: bool = False
+    smtp_timeout_seconds: int = Field(default=30, ge=1, le=120)
+
+    @field_validator("smtp_username", mode="before")
+    @classmethod
+    def empty_smtp_username(cls, value: str | None) -> str | None:
+        return value.strip() or None if value is not None else None
+
+    @model_validator(mode="after")
+    def validate_smtp_authentication(self) -> "Settings":
+        has_password = bool(self.smtp_password.get_secret_value())
+        if bool(self.smtp_username) != has_password:
+            raise ValueError("SMTP_USERNAME and SMTP_PASSWORD must be configured together")
+        if self.smtp_username and not self.smtp_starttls:
+            raise ValueError("Authenticated SMTP requires SMTP_STARTTLS=true")
+        if self.smtp_host.lower() == "smtp.gmail.com" and not self.smtp_username:
+            raise ValueError("Gmail SMTP requires a username and App Password")
+        return self
 
     @field_validator("app_secret_key")
     @classmethod

@@ -2,7 +2,14 @@
 
 Thư mục `clinic/` chứa phần triển khai mới cho đề tài phòng khám, theo hướng **FastAPI + pyodbc + SQL Server**. Các thư mục C# tại gốc repository là mã tham khảo của dự án cũ. Thiết kế nghiệp vụ dựa trên [SRS và ERD](docs/README.md) đã lưu cùng mã nguồn.
 
-Hiện tại dự án đã có SQL Server, migration, FastAPI, kết nối `pyodbc`, JWT, refresh token, RBAC và giao diện AngularJS cho mục 1.5. Đăng ký công khai chỉ tạo tài khoản Bệnh nhân; Admin tạo tài khoản nhân viên sau khi đăng nhập.
+Hiện tại dự án đã có SQL Server, migration, FastAPI, kết nối `pyodbc`, JWT, refresh token,
+RBAC, giao diện AngularJS, quản lý bệnh nhân (2.1), tiền sử/dị ứng (2.2), lịch hẹn (2.3),
+tiếp nhận (2.5) và bệnh án/chẩn đoán/cận lâm sàng (3.1).
+Đăng ký công khai chỉ tạo tài khoản Bệnh nhân; Admin tạo tài khoản nhân viên sau khi đăng nhập.
+
+Chi tiết cách DAL gọi SQL Server qua stored procedure: [Stored procedure](docs/stored-procedures.md).
+
+Để gửi thư thật từ Gmail, xem [Cấu hình Gmail SMTP](docs/gmail-smtp.md). Chạy `scripts/configure-gmail.ps1` để nhập App Password tại máy, sau đó build/khởi động lại API. Phần gửi mail hỗ trợ STARTTLS và đăng nhập SMTP; bộ test vẫn dùng MailHog để không gửi email của tài khoản giả ra ngoài.
 
 ## 1. Chuẩn bị máy
 
@@ -118,6 +125,26 @@ Các endpoint xác thực hiện có:
 | `PATCH` | `/api/v1/admin/users/{user_id}/status` | Khóa hoặc mở tài khoản; quyền `users.deactivate` hoặc `users.update` |
 | `GET` | `/api/v1/admin/roles` | Xem 5 vai trò và ma trận quyền; quyền `roles.read` |
 | `PUT` | `/api/v1/admin/roles/{role_code}/permissions` | Lưu quyền của vai trò; quyền `roles.update` |
+| `GET` | `/api/v1/patients` | Danh sách bệnh nhân theo phạm vi quyền; tìm kiếm, lọc, sắp xếp, phân trang |
+| `GET` | `/api/v1/patients/{patient_id}` | Xem hồ sơ hành chính nếu có quyền với bệnh nhân đó |
+| `POST` | `/api/v1/patients` | Lễ tân tạo hồ sơ chưa cần tài khoản; quyền `patients.create` |
+| `PUT` | `/api/v1/patients/{patient_id}` | Lễ tân sửa hồ sơ; quyền `patients.update`, cần `version` mới nhất |
+| `DELETE` | `/api/v1/patients/{patient_id}?version=...` | Xóa mềm hồ sơ; quyền `patients.delete`, từ chối khi còn lịch/lượt khám đang mở |
+| `GET` | `/api/v1/patients/{patient_id}/medical-histories` | Danh sách tiền sử/dị ứng; lọc, tìm kiếm, sắp xếp, phân trang |
+| `GET` | `/api/v1/patients/{patient_id}/medical-histories/{history_id}` | Xem một mục tiền sử/dị ứng |
+| `POST` | `/api/v1/patients/{patient_id}/medical-histories` | Bác sĩ được phân công thêm một mục |
+| `PUT` | `/api/v1/patients/{patient_id}/medical-histories/{history_id}` | Bác sĩ được phân công sửa; gửi `version` mới nhất |
+| `DELETE` | `/api/v1/patients/{patient_id}/medical-histories/{history_id}?version=...` | Bác sĩ được phân công xóa mềm |
+| `GET` | `/api/v1/doctors` | Tìm và phân trang danh sách bác sĩ đang hoạt động |
+| `GET` | `/api/v1/doctor-schedules` | Xem ca làm; lọc bác sĩ, ngày và trạng thái |
+| `POST` | `/api/v1/doctor-schedules` | Admin/Lễ tân tạo ca làm, ngăn ca trùng giờ |
+| `POST` | `/api/v1/doctor-schedules/{schedule_id}/cancel` | Hủy ca với `version`; từ chối nếu còn lịch hẹn hoạt động |
+| `GET` | `/api/v1/doctors/{doctor_id}/slots?work_date=YYYY-MM-DD` | Khung giờ trong ngày Việt Nam, có trạng thái khả dụng |
+| `GET` | `/api/v1/appointments` | Tra cứu lịch theo phạm vi quyền; tìm kiếm/lọc/sắp xếp/phân trang |
+| `GET` | `/api/v1/appointments/{appointment_id}` | Xem một lịch hẹn theo phạm vi quyền |
+| `POST` | `/api/v1/appointments` | Bệnh nhân tự đặt hoặc Lễ tân đặt giúp |
+| `PUT` | `/api/v1/appointments/{appointment_id}` | Đổi giờ/bác sĩ hoặc lý do khám; cần `version` mới nhất |
+| `POST` | `/api/v1/appointments/{appointment_id}/cancel` | Hủy lịch với `version` và `cancellation_reason` |
 
 Access token được ký bằng khóa riêng trong `.env` và hết hạn sau 30 phút. Refresh token chỉ lưu dạng SHA-256 trong database. Mật khẩu dùng Argon2; đăng nhập sai 5 lần khóa tài khoản 15 phút. Quyền được đọc trực tiếp từ `role_permissions` ở mỗi yêu cầu nên thay đổi RBAC có hiệu lực ngay.
 
@@ -132,7 +159,20 @@ docker compose run --rm api python -m CLI.create_admin --username admin --email 
 
 Sau đó mở `/app/` và đăng nhập bằng tài khoản Admin. Trang **Tài khoản** tạo nhân viên (Bác sĩ cần mã bác sĩ và chuyên khoa), tìm tài khoản, khóa/mở tài khoản. Trang **Phân quyền** hiển thị các quyền hành động của cả 5 vai trò và cho phép Admin sửa rồi lưu. Bệnh nhân có thể tự đăng ký trên giao diện. Menu và nút thao tác dựa trên quyền mà `/auth/me` trả về; API cũng kiểm tra quyền trên từng yêu cầu. Khi khóa tài khoản, access token cũ và refresh token đều mất hiệu lực. Không thể tự khóa tài khoản Admin đang đăng nhập hoặc gỡ các quyền quản trị thiết yếu của vai trò Admin.
 
-Các thẻ nghiệp vụ lịch hẹn, bệnh án, nhà thuốc, thu phí và báo cáo trên trang tổng quan hiện ghi **Sắp triển khai**; chưa có màn CRUD hay API nghiệp vụ tương ứng. Giao diện dùng AngularJS 1.8.3 được lưu cùng mã nguồn trong `Frontend/vendor/` để chạy không cần CDN.
+Trang **Bệnh nhân** cho Lễ tân thêm/sửa/xóa mềm và tra cứu theo mã, họ tên hoặc số điện thoại; có lọc giới tính, trạng thái tài khoản, sắp xếp và phân trang. Admin được xem; Bác sĩ chỉ xem bệnh nhân có lịch hoặc lượt khám được giao; Bệnh nhân chỉ xem hồ sơ của mình; Dược sĩ không có quyền truy cập. Hồ sơ tạo tại quầy không cần tài khoản đăng nhập. Khi xóa mềm hồ sơ đã liên kết tài khoản, tài khoản đó cũng bị vô hiệu hóa và các phiên đăng nhập bị thu hồi. Email và số điện thoại trong hồ sơ là thông tin liên hệ, không tự đổi email hoặc số điện thoại đăng nhập của tài khoản.
+
+Phần **Tiền sử bệnh và dị ứng** trong trang Bệnh nhân cho Bác sĩ thêm/sửa/xóa mềm hồ sơ của bệnh nhân đã có lịch hẹn hoặc lượt khám được giao; Bệnh nhân chỉ xem của mình. Lễ tân và Admin không có quyền xem dữ liệu y tế này. Mỗi mục có loại, tên, mô tả, ngày bắt đầu và trạng thái đang theo dõi. Khi sửa/xóa, gửi `version` của bản ghi vừa đọc; nếu người khác đã sửa trước, API trả `409` để tải lại dữ liệu. Mọi lần thêm/sửa/xóa được ghi vào audit log. Ví dụ tạo mục dị ứng:
+
+```json
+{"type":"allergy","name":"Penicillin","description":"Nổi mẩn sau khi dùng thuốc","onset_date":"2024-05-12","is_active":true}
+```
+
+Dữ liệu cận lâm sàng được thực hiện trong phần khám bệnh tiếp theo.
+Trang **Lịch hẹn** cho Admin/Lễ tân tạo ca làm theo bác sĩ, ngày, giờ bắt đầu/kết thúc và số phút mỗi lượt. Sau đó Bệnh nhân chọn bác sĩ/ngày/giờ trống để tự đặt; Lễ tân tra cứu hồ sơ để đặt giúp cả bệnh nhân chưa có tài khoản. Bệnh nhân chỉ xem/đổi/hủy lịch của mình; Bác sĩ xem lịch được giao; Admin chỉ xem lịch và quản lý ca; Dược sĩ không truy cập. Khi có lịch được giao, Bác sĩ có thể mở hồ sơ bệnh nhân và phần tiền sử/dị ứng ở bước 2.2.
+
+Lịch phải thuộc một slot đầy đủ của ca đang hoạt động, nằm trong tương lai và không chồng giờ với bất kỳ lịch còn chiếm chỗ nào của bác sĩ hoặc bệnh nhân. Kiểm tra này chạy trong transaction có khóa SQL Server dùng chung cho các worker, nên hai yêu cầu đồng thời đặt cùng giờ chỉ một yêu cầu thành công. Lịch đã qua giờ, đã hủy, tiếp nhận hoặc bắt đầu/hoàn tất khám không được đổi/hủy. Lịch hủy vẫn được giữ trong database để tra cứu. Chi tiết payload và cách thử: [Lịch hẹn bước 2.3](docs/appointments.md).
+
+Các thẻ nghiệp vụ bệnh án, nhà thuốc, thu phí và báo cáo trên trang tổng quan hiện ghi **Sắp triển khai**. Nhắc lịch email/in-app thuộc bước 2.4, check-in thuộc bước 2.5. Giao diện dùng AngularJS 1.8.3 được lưu cùng mã nguồn trong `Frontend/vendor/` để chạy không cần CDN.
 
 Chạy lint, unit test và integration test với SQL Server thật:
 
@@ -182,9 +222,9 @@ clinic/
   .env.example                     # Mẫu biến môi trường, không có mật khẩu thật
   .env                             # Cấu hình riêng, sinh cục bộ và không commit
   API/                             # FastAPI entrypoint, route và dependency
-    routes/                        # Endpoint xác thực, quản trị và health check
+    routes/                        # Endpoint xác thực, quản trị, bệnh nhân, tiền sử và health check
   BLL/                             # Business Logic Layer: xử lý nghiệp vụ
-  DAL/                             # Data Access Layer: pyodbc và repository SQL
+  DAL/                             # Data Access Layer: pyodbc gọi stored procedure
   Model/                           # Pydantic request/response schemas
   Frontend/                        # AngularJS: xác thực, tổng quan và quản trị RBAC
   Core/                            # Cấu hình, JWT, lỗi và logging dùng chung
@@ -197,6 +237,8 @@ clinic/
       003_runtime_security.sql     # Quyền SQL cho principal ứng dụng
       004_auth_version.sql         # Thu hồi access token cũ khi đặt lại mật khẩu
       005_auth_version_check.sql   # Bảo đảm phiên bản xác thực không âm
+      006_procedure_access.sql     # Quyền EXECUTE cho ứng dụng
+    procedures/                    # CREATE OR ALTER procedure theo nghiệp vụ
     checks/
       verify.sql                   # Kiểm tra database
   scripts/
@@ -208,7 +250,7 @@ clinic/
   docs/                            # Master Plan, SRS, Use Case và ERD
 ```
 
-Luồng phụ thuộc chính là `API → BLL → DAL`. `API` nhận và trả HTTP, `BLL` xử lý quy tắc nghiệp vụ, còn `DAL` thực hiện câu lệnh SQL bằng `pyodbc`. `Model` định nghĩa dữ liệu vào/ra; `Core` cung cấp thành phần dùng chung và không chứa nghiệp vụ phòng khám.
+Luồng phụ thuộc chính là `API → BLL → DAL → stored procedure`. `API` nhận và trả HTTP, `BLL` xử lý quy tắc nghiệp vụ, còn `DAL` gọi stored procedure bằng `pyodbc`. `Model` định nghĩa dữ liệu vào/ra; `Core` cung cấp thành phần dùng chung và không chứa nghiệp vụ phòng khám.
 
 ## 9. Xử lý lỗi thường gặp
 
@@ -240,4 +282,11 @@ Schema có khóa ngoại, `CHECK`, unique index và các trường soft-delete. 
 
 ## 11. Bước tiếp theo
 
-Nền tảng FastAPI, JWT và RBAC đã hoàn thành. Bước tiếp theo của Master Plan là CRUD hồ sơ bệnh nhân rồi luồng lịch hẹn, gồm tìm kiếm, lọc, sắp xếp, phân trang, kiểm tra quyền sở hữu và audit. Redis, hàng đợi, gửi email và bộ seed ít nhất 2.000 bản ghi được bổ sung ở các giai đoạn sau.
+Đã triển khai CRUD bệnh nhân (2.1), tiền sử/dị ứng (2.2), đặt/đổi/hủy lịch (2.3)
+và giao diện Bệnh nhân/Lễ tân, xác nhận/check-in/vắng hẹn (2.5).
+Xem [Hướng dẫn tiếp nhận](docs/reception.md) để thử web và API.
+Nhắc lịch email/in-app (2.4) và cấu hình Gmail đang tạm hoãn theo yêu cầu.
+Đã triển khai bệnh án, chẩn đoán, chỉ số sinh tồn, cận lâm sàng và hoàn tất khám (3.1).
+Xem [Hướng dẫn khám bệnh](docs/encounters.md), gồm payload và collection Postman.
+Bước tiếp theo là kê đơn và nhà thuốc (3.2). Phần audit/versioning đầy đủ (1.6), rà soát
+vận hành (1.7), Redis, hàng đợi và seed ít nhất 2.000 bản ghi sẽ hoàn thiện sau.

@@ -1,0 +1,149 @@
+{
+  "info": {
+    "name": "Clinic - Bệnh nhân (2.1)",
+    "description": "Các API bệnh nhân hiện đã triển khai. Chạy theo thứ tự từ 01 đến 05 bằng tài khoản Lễ tân. 05 xóa mềm hồ sơ thử nghiệm.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "patientId",
+      "value": ""
+    },
+    {
+      "key": "version",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Danh sách bệnh nhân",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/patients?page=1&page_size=20&sort_by=created_at&sort_order=desc",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "patients"],
+          "query": [
+            {"key": "page", "value": "1"},
+            {"key": "page_size", "value": "20"},
+            {"key": "sort_by", "value": "created_at"},
+            {"key": "sort_order", "value": "desc"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "02 - Tạo bệnh nhân",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Bệnh nhân kiểm thử Postman\",\n  \"date_of_birth\": \"1995-08-12\",\n  \"gender\": \"female\",\n  \"phone\": \"0987654321\",\n  \"email\": \"patient-postman@example.com\",\n  \"address\": \"Hà Nội\",\n  \"insurance_number\": \"BHYT-POSTMAN-001\"\n}",
+          "options": {"raw": {"language": "json"}}
+        },
+        "url": "{{baseUrl}}/api/v1/patients"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Tạo bệnh nhân thành công', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) {",
+              "  const patient = pm.response.json();",
+              "  pm.collectionVariables.set('patientId', patient.patient_id);",
+              "  pm.collectionVariables.set('version', patient.version);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Xem chi tiết bệnh nhân",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/patients/{{patientId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Xem bệnh nhân thành công', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) pm.collectionVariables.set('version', pm.response.json().version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Cập nhật bệnh nhân",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Bệnh nhân kiểm thử Postman\",\n  \"date_of_birth\": \"1995-08-12\",\n  \"gender\": \"female\",\n  \"phone\": \"0987654321\",\n  \"email\": \"patient-postman@example.com\",\n  \"address\": \"Hà Nội - đã cập nhật\",\n  \"insurance_number\": \"BHYT-POSTMAN-001\",\n  \"version\": \"{{version}}\"\n}",
+          "options": {"raw": {"language": "json"}}
+        },
+        "url": "{{baseUrl}}/api/v1/patients/{{patientId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Cập nhật bệnh nhân thành công', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) pm.collectionVariables.set('version', pm.response.json().version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Xóa mềm bệnh nhân",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/v1/patients/{{patientId}}?version={{version}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Xóa mềm bệnh nhân thành công', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

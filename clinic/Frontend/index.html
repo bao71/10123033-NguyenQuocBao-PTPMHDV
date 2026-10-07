@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Clinic · Quản lý phòng khám</title>
     <link rel="stylesheet" href="/app/assets/app.css" />
-    <link rel="stylesheet" href="/app/assets/auth.css" />
+    <link rel="stylesheet" href="/app/assets/auth.css?v=2" />
   </head>
   <body ng-controller="ClinicController as vm" ng-cloak>
     <div class="shell">
@@ -37,6 +37,26 @@
           ng-click="vm.open('roles')"
         >
           Phân quyền
+        </button>
+        <button
+          class="nav-item"
+          ng-if="vm.canReadPatients()"
+          ng-class="{'selected':vm.screen==='patients'}"
+          ng-click="vm.open('patients')"
+        >
+          Bệnh nhân
+        </button>
+        <button class="nav-item" ng-if="vm.canReadAppointments()"
+          ng-class="{'selected':vm.screen==='appointments'}" ng-click="vm.open('appointments')">
+          Lịch hẹn
+        </button>
+        <button class="nav-item" ng-if="vm.canReadReception()"
+          ng-class="{'selected':vm.screen==='reception'}" ng-click="vm.open('reception')">
+          Tiếp nhận
+        </button>
+        <button class="nav-item" ng-if="vm.canReadEncounters()"
+          ng-class="{'selected':vm.screen==='encounters'}" ng-click="vm.open('encounters')">
+          {{vm.can('encounters.read_assigned') ? 'Khám bệnh' : 'Bệnh án của tôi'}}
         </button>
         <div class="sidebar-spacer"></div>
         <div class="sidebar-user">
@@ -177,20 +197,20 @@
               >
                 {{vm.error || vm.message}}
               </div>
-              <div class="auth-recovery-actions">
+              <div class="auth-recovery-actions" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%">
                 <button
                   type="button"
-                  class="auth-code-button"
+                  class="link"
                   ng-click="vm.authScreen='reset'; vm.clearMessage()"
                 >
-                  I already have a code <span aria-hidden="true">→</span>
+                  I already have a code
                 </button>
                 <button
                   type="button"
-                  class="auth-return-button"
+                  class="link"
                   ng-click="vm.authScreen='login'; vm.clearMessage()"
                 >
-                  ← Back to login
+                  Back to login
                 </button>
               </div>
             </div>
@@ -458,6 +478,625 @@
                     </button>
                   </div>
                 </div>
+              </div>
+            </section>
+
+            <section ng-if="vm.screen==='patients' && vm.canReadPatients()">
+              <div class="page-head row-head">
+                <div>
+                  <span class="eyebrow">QUẢN LÝ PHÒNG KHÁM</span>
+                  <h1>Bệnh nhân</h1>
+                  <p ng-if="vm.can('patients.read')">Tra cứu và quản lý thông tin hành chính bệnh nhân.</p>
+                  <p ng-if="vm.can('patients.read_assigned') && !vm.can('patients.read')">Chỉ hiển thị bệnh nhân có lịch hoặc lượt khám được giao cho bạn.</p>
+                  <p ng-if="vm.can('patients.read_self') && !vm.can('patients.read_assigned')">Thông tin hồ sơ của bạn.</p>
+                </div>
+                <button class="primary" ng-if="vm.can('patients.create')"
+                  ng-click="vm.startPatientForm(null)">+ Thêm bệnh nhân</button>
+              </div>
+              <form class="panel create-panel" ng-if="vm.showPatientForm" ng-submit="vm.savePatient()">
+                <h3>{{vm.patientForm.patient_id ? 'Sửa bệnh nhân' : 'Thêm bệnh nhân'}}</h3>
+                <div class="form-grid">
+                  <label>Họ và tên<input ng-model="vm.patientForm.full_name" required minlength="2" maxlength="200" /></label>
+                  <label>Ngày sinh <small>(YYYY-MM-DD)</small><input ng-model="vm.patientForm.date_of_birth" placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" /></label>
+                  <label>Giới tính<select ng-model="vm.patientForm.gender">
+                    <option value="">Chưa chọn</option><option value="male">Nam</option>
+                    <option value="female">Nữ</option><option value="other">Khác</option>
+                    <option value="unknown">Chưa rõ</option>
+                  </select></label>
+                  <label>Số điện thoại<input ng-model="vm.patientForm.phone" maxlength="20" /></label>
+                  <label>Email<input type="email" ng-model="vm.patientForm.email" /></label>
+                  <label>Địa chỉ<input ng-model="vm.patientForm.address" maxlength="500" /></label>
+                  <label>Số bảo hiểm<input ng-model="vm.patientForm.insurance_number" maxlength="50" /></label>
+                </div>
+                <div class="patient-form-actions">
+                  <button class="primary" ng-disabled="vm.busy">Lưu bệnh nhân</button>
+                  <button type="button" class="secondary" ng-click="vm.showPatientForm=false">Hủy</button>
+                </div>
+              </form>
+              <div class="panel" ng-if="vm.can('patients.read') || vm.can('patients.read_assigned')">
+                <form class="patient-toolbar" ng-submit="vm.loadPatients(1)">
+                  <input aria-label="Tìm bệnh nhân" ng-model="vm.patientFilters.search"
+                    placeholder="Mã, họ tên hoặc số điện thoại" />
+                  <select aria-label="Lọc giới tính" ng-model="vm.patientFilters.gender">
+                    <option value="">Mọi giới tính</option><option value="male">Nam</option>
+                    <option value="female">Nữ</option><option value="other">Khác</option>
+                    <option value="unknown">Chưa rõ</option>
+                  </select>
+                  <select aria-label="Lọc tài khoản" ng-model="vm.patientFilters.has_account">
+                    <option value="">Mọi hồ sơ</option><option value="true">Có tài khoản</option>
+                    <option value="false">Chưa có tài khoản</option>
+                  </select>
+                  <select aria-label="Sắp xếp theo" ng-model="vm.patientFilters.sort_by">
+                    <option value="created_at">Ngày tạo</option><option value="full_name">Họ tên</option>
+                    <option value="patient_code">Mã bệnh nhân</option><option value="date_of_birth">Ngày sinh</option>
+                  </select>
+                  <select aria-label="Thứ tự" ng-model="vm.patientFilters.sort_order">
+                    <option value="desc">Giảm dần</option><option value="asc">Tăng dần</option>
+                  </select>
+                  <button class="secondary">Áp dụng</button>
+                </form>
+                <div class="table-scroll">
+                  <table>
+                    <thead><tr><th>Mã</th><th>Họ và tên</th><th>Ngày sinh</th><th>Điện thoại</th><th>Tài khoản</th><th>Thao tác</th></tr></thead>
+                    <tbody>
+                      <tr ng-repeat="item in vm.patients.items track by item.patient_id">
+                        <td>{{item.patient_code}}</td><td><strong>{{item.full_name}}</strong></td>
+                        <td>{{item.date_of_birth ? (item.date_of_birth | date:'dd/MM/yyyy') : '—'}}</td>
+                        <td>{{item.phone || '—'}}</td><td>{{item.has_account ? 'Có' : 'Chưa có'}}</td>
+                        <td class="patient-actions"><button class="link" ng-click="vm.openPatient(item)">Xem</button>
+                          <button class="link" ng-if="vm.can('patients.update')" ng-click="vm.startPatientForm(item)">Sửa</button>
+                          <button class="link" ng-if="vm.can('patients.delete')" ng-click="vm.deletePatient(item)">Xóa</button></td>
+                      </tr>
+                      <tr ng-if="!vm.patients.items.length"><td colspan="6" class="empty">Không có bệnh nhân phù hợp.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="pagination">
+                  <span>{{vm.patients.total}} bệnh nhân · Trang {{vm.patients.page}}</span>
+                  <div><button class="secondary" ng-disabled="vm.patients.page<=1" ng-click="vm.loadPatients(vm.patients.page-1)">Trước</button>
+                    <button class="secondary" ng-disabled="vm.patients.page*vm.patients.page_size>=vm.patients.total" ng-click="vm.loadPatients(vm.patients.page+1)">Sau</button></div>
+                </div>
+              </div>
+              <div class="panel" ng-if="vm.selectedPatient || (vm.can('patients.read_self') && vm.patients.items.length)">
+                <div ng-repeat="patient in [vm.selectedPatient || vm.patients.items[0]] track by patient.patient_id">
+                  <div class="row-head"><h3>{{patient.full_name}}</h3><span class="status-tag">{{patient.patient_code}}</span></div>
+                  <div class="patient-info">
+                    <div><small>Ngày sinh</small><strong>{{patient.date_of_birth ? (patient.date_of_birth | date:'dd/MM/yyyy') : 'Chưa cập nhật'}}</strong></div>
+                    <div><small>Giới tính</small><strong>{{vm.genderName(patient.gender)}}</strong></div>
+                    <div><small>Điện thoại</small><strong>{{patient.phone || 'Chưa cập nhật'}}</strong></div>
+                    <div><small>Email</small><strong>{{patient.email || 'Chưa cập nhật'}}</strong></div>
+                    <div><small>Địa chỉ</small><strong>{{patient.address || 'Chưa cập nhật'}}</strong></div>
+                    <div><small>Số bảo hiểm</small><strong>{{patient.insurance_number || 'Chưa cập nhật'}}</strong></div>
+                  </div>
+                  <button class="secondary" ng-if="vm.can('patients.update')" ng-click="vm.startPatientForm(patient)">Sửa thông tin</button>
+                </div>
+              </div>
+              <div class="panel history-panel" ng-if="vm.selectedPatient && vm.canReadMedicalHistories()">
+                <div class="row-head">
+                  <div>
+                    <h3>Tiền sử bệnh và dị ứng</h3>
+                    <p class="muted">Hồ sơ y tế của {{vm.selectedPatient.full_name}}</p>
+                  </div>
+                  <button class="primary" ng-if="vm.can('medical_histories.write_assigned')"
+                    ng-click="vm.startHistoryForm(null)">+ Thêm mục</button>
+                </div>
+                <form class="history-filters" ng-submit="vm.loadMedicalHistories(1)">
+                    <input aria-label="Tìm tiền sử hoặc dị ứng" ng-model="vm.historyFilters.search"
+                      maxlength="100" placeholder="Tìm tên hoặc mô tả" />
+                  <select aria-label="Lọc loại tiền sử" ng-model="vm.historyFilters.type">
+                    <option value="">Tất cả loại</option>
+                    <option value="allergy">Dị ứng</option><option value="condition">Bệnh lý</option>
+                    <option value="surgery">Phẫu thuật</option><option value="family">Tiền sử gia đình</option>
+                    <option value="medication">Thuốc đang dùng</option><option value="other">Khác</option>
+                  </select>
+                  <select aria-label="Lọc trạng thái" ng-model="vm.historyFilters.is_active">
+                    <option value="">Mọi trạng thái</option><option value="true">Đang theo dõi</option>
+                    <option value="false">Đã kết thúc</option>
+                  </select>
+                    <select aria-label="Sắp xếp tiền sử" ng-model="vm.historyFilters.sort_by">
+                      <option value="created_at">Ngày tạo</option><option value="onset_date">Ngày bắt đầu</option>
+                      <option value="name">Tên</option>
+                    </select>
+                    <select aria-label="Thứ tự sắp xếp" ng-model="vm.historyFilters.sort_order">
+                      <option value="desc">Giảm dần</option><option value="asc">Tăng dần</option>
+                    </select>
+                    <button class="secondary">Tìm và lọc</button>
+                </form>
+                <form class="history-form" ng-if="vm.showHistoryForm && vm.can('medical_histories.write_assigned')"
+                  ng-submit="vm.saveHistory()">
+                  <h4>{{vm.historyForm.history_id ? 'Sửa mục tiền sử' : 'Thêm mục tiền sử'}}</h4>
+                  <div class="form-grid">
+                    <label>Loại<select ng-model="vm.historyForm.type" required>
+                      <option value="allergy">Dị ứng</option><option value="condition">Bệnh lý</option>
+                      <option value="surgery">Phẫu thuật</option><option value="family">Tiền sử gia đình</option>
+                      <option value="medication">Thuốc đang dùng</option><option value="other">Khác</option>
+                    </select></label>
+                    <label>Tên bệnh lý / tác nhân<input ng-model="vm.historyForm.name" required minlength="2" maxlength="200" /></label>
+                    <label>Ngày bắt đầu <small>(YYYY-MM-DD)</small><input ng-model="vm.historyForm.onset_date"
+                      placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" /></label>
+                    <label class="history-checkbox"><input type="checkbox" ng-model="vm.historyForm.is_active" />Đang theo dõi</label>
+                  </div>
+                  <label>Mô tả<textarea ng-model="vm.historyForm.description" maxlength="4000" rows="3"
+                    placeholder="Triệu chứng, mức độ hoặc lưu ý cho lần khám sau"></textarea></label>
+                  <div class="patient-form-actions">
+                    <button class="primary" ng-disabled="vm.busy">Lưu mục tiền sử</button>
+                    <button type="button" class="secondary" ng-click="vm.showHistoryForm=false">Hủy</button>
+                  </div>
+                </form>
+                <div class="history-list">
+                  <article class="history-item" ng-repeat="item in vm.medicalHistories.items track by item.history_id">
+                    <div class="row-head">
+                      <div><span class="history-type">{{vm.historyTypeName(item.type)}}</span>
+                        <h4>{{item.name}}</h4></div>
+                      <span class="status-tag" ng-class="{'ready':item.is_active}">{{item.is_active ? 'Đang theo dõi' : 'Đã kết thúc'}}</span>
+                    </div>
+                    <p ng-if="item.description">{{item.description}}</p>
+                    <small>Ngày bắt đầu: {{item.onset_date ? (item.onset_date | date:'dd/MM/yyyy') : 'Chưa rõ'}} · Cập nhật: {{item.updated_at | date:'dd/MM/yyyy'}}</small>
+                    <div class="history-actions" ng-if="vm.can('medical_histories.write_assigned')">
+                      <button class="link" ng-click="vm.startHistoryForm(item)">Sửa</button>
+                      <button class="link" ng-click="vm.deleteHistory(item)">Xóa</button>
+                    </div>
+                  </article>
+                  <p class="empty" ng-if="!vm.medicalHistories.items.length">Chưa có tiền sử bệnh hoặc dị ứng phù hợp.</p>
+                </div>
+                <div class="pagination" ng-if="vm.medicalHistories.total > vm.medicalHistories.page_size">
+                  <span>{{vm.medicalHistories.total}} mục · Trang {{vm.medicalHistories.page}}</span>
+                  <div><button class="secondary" ng-disabled="vm.medicalHistories.page<=1"
+                    ng-click="vm.loadMedicalHistories(vm.medicalHistories.page-1)">Trước</button>
+                    <button class="secondary"
+                      ng-disabled="vm.medicalHistories.page*vm.medicalHistories.page_size>=vm.medicalHistories.total"
+                      ng-click="vm.loadMedicalHistories(vm.medicalHistories.page+1)">Sau</button></div>
+                </div>
+              </div>
+            </section>
+
+            <section ng-if="vm.screen==='encounters' && vm.canReadEncounters()">
+              <div class="page-head row-head">
+                <div><span class="eyebrow">HỒ SƠ KHÁM · GIỜ VIỆT NAM (UTC+7)</span>
+                  <h1>{{vm.can('encounters.read_assigned') ? 'Khám bệnh' : 'Bệnh án của tôi'}}</h1>
+                  <p>{{vm.can('encounters.read_assigned') ? 'Tiếp tục lượt khám, ghi nhận bệnh án và xử lý cận lâm sàng.' : 'Xem kết luận và kết quả của các lượt khám đã hoàn tất.'}}</p></div>
+                <button class="secondary" ng-disabled="vm.busy"
+                  ng-click="vm.loadEncounters(vm.encounters.page); vm.loadClinicalQueue(1)">Làm mới danh sách</button>
+              </div>
+              <div class="panel" ng-if="vm.can('encounters.create_assigned')">
+                <div class="row-head"><h3>Bệnh nhân chờ khám</h3><span>{{vm.clinicalQueue.total}} lượt đã check-in</span></div>
+                <div class="clinical-queue">
+                  <article ng-repeat="item in vm.clinicalQueue.items track by item.appointment_id">
+                    <div><strong>{{item.patient_name}}</strong><small>{{item.patient_code}} · {{vm.clinicDateTime(item.appointment_at)}}</small>
+                      <p ng-if="item.reason">{{item.reason}}</p></div>
+                    <button class="primary" ng-disabled="vm.busy" ng-click="vm.startEncounter(item)">Bắt đầu khám</button>
+                  </article>
+                  <p class="empty" ng-if="!vm.clinicalQueue.items.length">Chưa có bệnh nhân đang chờ trong lịch của bạn.</p>
+                </div>
+                <div class="pagination"><span>Trang {{vm.clinicalQueue.page}}</span><div>
+                  <button class="secondary" ng-disabled="vm.clinicalQueue.page<=1" ng-click="vm.loadClinicalQueue(vm.clinicalQueue.page-1)">Trước</button>
+                  <button class="secondary" ng-disabled="vm.clinicalQueue.page*vm.clinicalQueue.page_size>=vm.clinicalQueue.total"
+                    ng-click="vm.loadClinicalQueue(vm.clinicalQueue.page+1)">Sau</button></div></div>
+              </div>
+              <div class="panel encounter-detail" ng-if="vm.selectedEncounter">
+                <div class="row-head"><div><h3>{{vm.selectedEncounter.patient_name}} · {{vm.selectedEncounter.patient_code}}</h3>
+                  <p>Bác sĩ: {{vm.selectedEncounter.doctor_name}} · {{vm.selectedEncounter.specialty}}</p>
+                  <small>Bắt đầu: {{vm.clinicDateTime(vm.selectedEncounter.started_at)}}
+                    <span ng-if="vm.selectedEncounter.ended_at"> · Kết thúc: {{vm.clinicDateTime(vm.selectedEncounter.ended_at)}}</span></small></div>
+                  <span class="status-tag ready">{{vm.encounterStatusName(vm.selectedEncounter.status)}}</span></div>
+                <div class="clinical-history" ng-if="vm.encounterHistories.length">
+                  <strong>Tiền sử và dị ứng đang hoạt động</strong>
+                  <p ng-repeat="h in vm.encounterHistories track by h.history_id"
+                    ng-class="{'clinical-allergy': h.type==='allergy'}">{{vm.historyTypeName(h.type)}}: {{h.name}}
+                    <span ng-if="h.description"> · {{h.description}}</span></p>
+                </div>
+                <p class="muted" ng-if="vm.selectedEncounter.status==='completed'">Bệnh án đã hoàn tất và khóa chỉnh sửa.</p>
+                <form name="clinicalNoteForm" ng-submit="vm.saveEncounter(false)">
+                  <fieldset class="clinical-fieldset" ng-disabled="!vm.canEditEncounter('encounters.update_assigned') || vm.busy">
+                    <div class="form-grid">
+                      <label>Triệu chứng / lý do khám<textarea ng-model="vm.encounterForm.chief_complaint" maxlength="2000" rows="3"></textarea></label>
+                      <label>Nội dung khám<textarea ng-model="vm.encounterForm.clinical_notes" maxlength="20000" rows="3"></textarea></label>
+                    </div>
+                    <h4>Chỉ số sinh tồn</h4>
+                    <div class="vital-grid">
+                      <label>Nhiệt độ (°C)<input type="number" step="0.1" min="25" max="45" ng-model="vm.encounterForm.vital_signs.temperature_c" /></label>
+                      <label>Mạch (lần/phút)<input type="number" min="20" max="300" ng-model="vm.encounterForm.vital_signs.pulse_bpm" /></label>
+                      <label>HA tâm thu (mmHg)<input type="number" min="40" max="300" ng-model="vm.encounterForm.vital_signs.systolic_mmhg" /></label>
+                      <label>HA tâm trương (mmHg)<input type="number" min="20" max="200" ng-model="vm.encounterForm.vital_signs.diastolic_mmhg" /></label>
+                      <label>Nhịp thở (lần/phút)<input type="number" min="5" max="80" ng-model="vm.encounterForm.vital_signs.respiratory_rate" /></label>
+                      <label>SpO₂ (%)<input type="number" step="0.1" min="0" max="100" ng-model="vm.encounterForm.vital_signs.spo2_percent" /></label>
+                      <label>Cân nặng (kg)<input type="number" step="0.1" min="0.1" max="500" ng-model="vm.encounterForm.vital_signs.weight_kg" /></label>
+                      <label>Chiều cao (cm)<input type="number" step="0.1" min="0.1" max="250" ng-model="vm.encounterForm.vital_signs.height_cm" /></label>
+                    </div>
+                    <div class="row-head"><h4>Chẩn đoán</h4><button type="button" class="secondary"
+                      ng-if="vm.canEditEncounter('encounters.update_assigned')" ng-disabled="vm.encounterForm.diagnoses.length>=20"
+                      ng-click="vm.addDiagnosis()">+ Chẩn đoán</button></div>
+                    <div class="diagnosis-row" ng-repeat="d in vm.encounterForm.diagnoses track by $index">
+                      <label>Mã (tùy chọn)<input ng-model="d.code" maxlength="30" pattern="[A-Za-z0-9.\-]+" /></label>
+                      <label>Tên chẩn đoán<input ng-model="d.name" required maxlength="500" /></label>
+                      <label>Ghi chú<input ng-model="d.notes" maxlength="2000" /></label>
+                      <label class="diagnosis-primary"><input type="checkbox" ng-model="d.is_primary"
+                        ng-change="d.is_primary && vm.setPrimaryDiagnosis(d)" /> Chính</label>
+                      <button type="button" class="link" ng-if="vm.canEditEncounter('encounters.update_assigned')"
+                        ng-click="vm.encounterForm.diagnoses.splice($index,1)">Bỏ</button>
+                    </div>
+                    <div class="form-grid">
+                      <label>Kết luận / chẩn đoán tổng hợp<textarea ng-model="vm.encounterForm.diagnosis_summary" maxlength="2000" rows="3"></textarea></label>
+                      <label>Hướng xử trí / lời dặn<textarea ng-model="vm.encounterForm.treatment_plan" maxlength="20000" rows="3"></textarea></label>
+                    </div>
+                  </fieldset>
+                  <div class="history-actions" ng-if="vm.canEditEncounter('encounters.update_assigned')">
+                    <button class="primary" ng-disabled="vm.busy || clinicalNoteForm.$invalid">Lưu bệnh án</button>
+                    <button type="button" class="secondary" ng-if="vm.can('encounters.complete_assigned')"
+                      ng-disabled="vm.busy || clinicalNoteForm.$invalid" ng-click="vm.saveEncounter(true)">Lưu và hoàn tất khám</button>
+                    <span class="muted" ng-if="vm.encounterDirty()">Có thay đổi chưa lưu.</span>
+                  </div>
+                </form>
+                <div class="row-head clinical-section-head"><h3>Cận lâm sàng</h3><button class="secondary"
+                  ng-if="vm.canEditEncounter('clinical_orders.write_assigned')" ng-disabled="vm.busy || vm.encounterDirty()"
+                  ng-click="vm.startOrderForm(null)">+ Chỉ định</button></div>
+                <p class="muted" ng-if="vm.encounterDirty()">Lưu bệnh án trước khi sửa chỉ định hoặc kết quả.</p>
+                <form class="clinical-subform" ng-if="vm.orderForm" ng-submit="vm.saveOrder()">
+                  <h4>{{vm.orderForm.order_id ? 'Sửa chỉ định' : 'Thêm chỉ định'}}</h4>
+                  <div class="form-grid"><label>Loại<select required ng-model="vm.orderForm.order_type">
+                    <option value="laboratory">Xét nghiệm</option><option value="imaging">Chẩn đoán hình ảnh</option><option value="other">Khác</option></select></label>
+                    <label>Tên chỉ định<input required ng-model="vm.orderForm.name" maxlength="300" /></label></div>
+                  <label>Hướng dẫn<textarea ng-model="vm.orderForm.instructions" maxlength="2000" rows="2"></textarea></label>
+                  <label ng-if="vm.orderForm.order_id">Trạng thái<select ng-model="vm.orderForm.status">
+                    <option value="ordered">Đã chỉ định</option><option value="in_progress">Đang thực hiện</option></select></label>
+                  <div class="history-actions"><button class="primary" ng-disabled="vm.busy">Lưu chỉ định</button>
+                    <button type="button" class="secondary" ng-click="vm.orderForm=null">Đóng</button></div>
+                </form>
+                <form class="clinical-subform" ng-if="vm.resultForm" ng-submit="vm.saveResult()">
+                  <h4>Kết quả: {{vm.resultForm.order_name}}</h4>
+                  <label>Nội dung kết quả<textarea ng-model="vm.resultForm.result_text" maxlength="20000" rows="3"></textarea></label>
+                  <div class="form-grid"><label>Giá trị số<input type="number" step="any" ng-model="vm.resultForm.numeric_value" /></label>
+                    <label>Đơn vị<input ng-model="vm.resultForm.unit" maxlength="50" /></label></div>
+                  <label>Khoảng tham chiếu<input ng-model="vm.resultForm.reference_range" maxlength="200" /></label>
+                  <div class="history-actions"><button class="primary" ng-disabled="vm.busy || (!vm.resultForm.result_text && vm.resultForm.numeric_value==null)">Lưu kết quả</button>
+                    <button type="button" class="secondary" ng-click="vm.resultForm=null">Đóng</button></div>
+                </form>
+                <article class="clinical-order" ng-repeat="order in vm.selectedEncounter.clinical_orders track by order.order_id">
+                  <div class="row-head"><h4>{{order.name}} <small>· {{vm.orderTypeName(order.order_type)}}</small></h4>
+                    <span class="status-tag" ng-class="{'ready': order.status==='completed'}">{{vm.orderStatusName(order.status)}}</span></div>
+                  <p ng-if="order.instructions">{{order.instructions}}</p>
+                  <div class="history-actions" ng-if="order.status!=='cancelled'">
+                    <button class="link" ng-if="vm.canEditEncounter('clinical_orders.write_assigned') && !order.results.length"
+                      ng-disabled="vm.busy || vm.encounterDirty()" ng-click="vm.startOrderForm(order)">Sửa chỉ định</button>
+                    <button class="link" ng-if="vm.canEditEncounter('clinical_orders.write_assigned') && !order.results.length"
+                      ng-disabled="vm.busy || vm.encounterDirty()" ng-click="vm.removeOrder(order, 'cancel')">Hủy chỉ định</button>
+                    <button class="link" ng-if="vm.canEditEncounter('clinical_orders.write_assigned') && !order.results.length"
+                      ng-disabled="vm.busy || vm.encounterDirty()" ng-click="vm.removeOrder(order, 'delete')">Xóa chỉ định</button>
+                    <button class="link" ng-if="vm.canEditEncounter('clinical_results.write_assigned')"
+                      ng-disabled="vm.busy || vm.encounterDirty()" ng-click="vm.startResultForm(order,null)">+ Nhập kết quả</button>
+                  </div>
+                  <div class="clinical-result" ng-repeat="result in order.results track by result.result_id">
+                    <p class="clinical-text" ng-if="result.result_text">{{result.result_text}}</p>
+                    <p ng-if="result.numeric_value!==null">Giá trị: <strong>{{result.numeric_value}} {{result.unit}}</strong></p>
+                    <p ng-if="result.reference_range">Khoảng tham chiếu: {{result.reference_range}}</p>
+                    <small>{{vm.clinicDateTime(result.result_at)}}</small>
+                    <div class="history-actions" ng-if="vm.canEditEncounter('clinical_results.write_assigned')">
+                      <button class="link" ng-disabled="vm.busy || vm.encounterDirty()" ng-click="vm.startResultForm(order,result)">Sửa kết quả</button>
+                      <button class="link" ng-disabled="vm.busy || vm.encounterDirty()" ng-click="vm.removeResult(order,result)">Xóa kết quả</button>
+                    </div>
+                  </div>
+                </article>
+                <p class="muted" ng-if="!vm.selectedEncounter.clinical_orders.length">Chưa có chỉ định cận lâm sàng.</p>
+                <div ng-if="vm.can('record_versions.read_assigned')" class="clinical-section-head">
+                  <button class="secondary" ng-disabled="vm.busy" ng-click="vm.showEncounterVersions ? vm.showEncounterVersions=false : vm.loadEncounterVersions(1)">
+                    {{vm.showEncounterVersions ? 'Ẩn lịch sử bệnh án' : 'Lịch sử bệnh án'}}</button>
+                  <div class="clinical-version" ng-if="vm.showEncounterVersions"
+                    ng-repeat="version in vm.encounterVersions.items track by version.version_no">
+                    <strong>Phiên bản {{version.version_no}}</strong> · {{version.changed_by_name}} · {{vm.clinicDateTime(version.changed_at)}}
+                    <p>{{vm.clinicalActionName(version.change_reason)}} · {{vm.encounterStatusName(version.data.status)}}</p>
+                    <details><summary>Xem nội dung đã lưu</summary>
+                      <p class="clinical-text"><strong>Lý do khám:</strong> {{version.data.chief_complaint || 'Chưa ghi'}}</p>
+                      <p class="clinical-text"><strong>Nội dung khám:</strong> {{version.data.clinical_notes || 'Chưa ghi'}}</p>
+                      <p class="clinical-text"><strong>Kết luận:</strong> {{version.data.diagnosis_summary || 'Chưa ghi'}}</p>
+                      <p class="clinical-text"><strong>Hướng xử trí:</strong> {{version.data.treatment_plan || 'Chưa ghi'}}</p>
+                      <p><strong>Chỉ số:</strong> Nhiệt độ {{version.data.vital_signs.temperature_c == null ? '—' : version.data.vital_signs.temperature_c}} °C;
+                        mạch {{version.data.vital_signs.pulse_bpm == null ? '—' : version.data.vital_signs.pulse_bpm}} lần/phút;
+                        huyết áp {{version.data.vital_signs.systolic_mmhg == null ? '—' : version.data.vital_signs.systolic_mmhg}}/{{version.data.vital_signs.diastolic_mmhg == null ? '—' : version.data.vital_signs.diastolic_mmhg}} mmHg;
+                        nhịp thở {{version.data.vital_signs.respiratory_rate == null ? '—' : version.data.vital_signs.respiratory_rate}} lần/phút;
+                        SpO₂ {{version.data.vital_signs.spo2_percent == null ? '—' : version.data.vital_signs.spo2_percent}} %;
+                        cân nặng {{version.data.vital_signs.weight_kg == null ? '—' : version.data.vital_signs.weight_kg}} kg;
+                        chiều cao {{version.data.vital_signs.height_cm == null ? '—' : version.data.vital_signs.height_cm}} cm.</p>
+                      <p ng-repeat="d in version.data.diagnoses track by $index"><strong>{{d.is_primary ? 'Chẩn đoán chính:' : 'Chẩn đoán kèm:'}}</strong>
+                        {{d.code}} {{d.name}} <span ng-if="d.notes"> · {{d.notes}}</span></p>
+                      <article class="clinical-order" ng-repeat="o in version.data.clinical_orders track by $index">
+                        <strong>{{o.name}}</strong> · {{vm.orderStatusName(o.status)}}<p ng-if="o.instructions">{{o.instructions}}</p>
+                        <div class="clinical-result" ng-repeat="r in o.results track by $index">
+                          <p class="clinical-text" ng-if="r.result_text">{{r.result_text}}</p>
+                          <p ng-if="r.numeric_value!=null">{{r.numeric_value}} {{r.unit}}</p>
+                          <p ng-if="r.reference_range">Tham chiếu: {{r.reference_range}}</p>
+                        </div>
+                      </article>
+                    </details>
+                  </div>
+                  <div class="pagination" ng-if="vm.showEncounterVersions"><span>{{vm.encounterVersions.total}} phiên bản</span><div>
+                    <button class="secondary" ng-disabled="vm.encounterVersions.page<=1" ng-click="vm.loadEncounterVersions(vm.encounterVersions.page-1)">Trước</button>
+                    <button class="secondary" ng-disabled="vm.encounterVersions.page*vm.encounterVersions.page_size>=vm.encounterVersions.total"
+                      ng-click="vm.loadEncounterVersions(vm.encounterVersions.page+1)">Sau</button></div></div>
+                </div>
+              </div>
+              <div class="panel">
+                <h3>{{vm.can('encounters.read_assigned') ? 'Bệnh án được giao' : 'Lịch sử khám đã hoàn tất'}}</h3>
+                <form class="reception-filters" ng-submit="vm.loadEncounters(1)">
+                  <label>Tìm bệnh án<input ng-model="vm.encounterFilters.search" maxlength="100" placeholder="Tên, mã bệnh nhân, chẩn đoán" /></label>
+                  <label ng-if="vm.can('encounters.read_assigned')">Trạng thái<select ng-model="vm.encounterFilters.status">
+                    <option value="">Tất cả</option><option value="in_progress">Đang khám</option><option value="completed">Đã hoàn tất</option><option value="cancelled">Đã hủy</option></select></label>
+                  <label>Từ ngày<input ng-model="vm.encounterFilters.date_from" placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" /></label>
+                  <label>Đến ngày<input ng-model="vm.encounterFilters.date_to" placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" /></label>
+                  <label>Sắp xếp<select ng-model="vm.encounterFilters.sort_by"><option value="started_at">Ngày khám</option><option value="updated_at">Cập nhật</option><option value="status">Trạng thái</option></select></label>
+                  <label>Thứ tự<select ng-model="vm.encounterFilters.sort_order"><option value="desc">Mới nhất trước</option><option value="asc">Cũ nhất trước</option></select></label>
+                  <button class="secondary">Tìm và lọc</button>
+                </form>
+                <div class="appointment-list">
+                  <article class="appointment-item" ng-repeat="item in vm.encounters.items track by item.encounter_id">
+                    <div class="row-head"><strong>{{item.patient_name}} · {{item.patient_code}}</strong><span class="status-tag">{{vm.encounterStatusName(item.status)}}</span></div>
+                    <p>{{vm.clinicDateTime(item.started_at)}} · Bác sĩ {{item.doctor_name}}</p>
+                    <p ng-if="item.diagnosis_summary">{{item.diagnosis_summary}}</p>
+                    <button class="link" ng-disabled="vm.busy" ng-click="vm.openEncounter(item)">Mở bệnh án</button>
+                  </article>
+                  <p class="empty" ng-if="!vm.encounters.items.length">Chưa có bệnh án phù hợp.</p>
+                </div>
+                <div class="pagination"><span>{{vm.encounters.total}} bệnh án · Trang {{vm.encounters.page}}</span><div>
+                  <button class="secondary" ng-disabled="vm.encounters.page<=1" ng-click="vm.loadEncounters(vm.encounters.page-1)">Trước</button>
+                  <button class="secondary" ng-disabled="vm.encounters.page*vm.encounters.page_size>=vm.encounters.total" ng-click="vm.loadEncounters(vm.encounters.page+1)">Sau</button></div></div>
+              </div>
+            </section>
+
+            <section ng-if="vm.screen==='reception' && vm.canReadReception()">
+              <div class="page-head row-head">
+                <div><span class="eyebrow">LỄ TÂN · GIỜ VIỆT NAM (UTC+7)</span>
+                  <h1>Tiếp nhận bệnh nhân</h1><p>Xác nhận lịch, ghi nhận bệnh nhân đã đến và theo dõi lượt chờ khám.</p></div>
+                <div class="appointment-toolbar">
+                  <button class="primary" ng-if="vm.canCreateAppointment()"
+                    ng-click="vm.open('appointments'); vm.startAppointmentForm(null)">+ Đặt lịch tại quầy</button>
+                  <button class="secondary" ng-if="vm.can('patients.create')"
+                    ng-click="vm.open('patients'); vm.startPatientForm(null)">+ Hồ sơ bệnh nhân</button>
+                  <button class="secondary" ng-disabled="vm.receptionLoading || vm.busy"
+                    ng-click="vm.loadReception(vm.reception.page)">Làm mới</button>
+                </div>
+              </div>
+              <div class="reception-summary" aria-label="Thống kê lịch trong ngày">
+                <div><span>Tổng lịch</span><strong>{{vm.reception.summary.total || 0}}</strong></div>
+                <div><span>Chưa đến</span><strong>{{(vm.reception.summary.booked || 0) + (vm.reception.summary.confirmed || 0)}}</strong></div>
+                <div class="waiting"><span>Đã đến · chờ khám</span><strong>{{vm.reception.summary.checked_in || 0}}</strong></div>
+                <div><span>Đang khám</span><strong>{{vm.reception.summary.in_progress || 0}}</strong></div>
+                <div><span>Đã khám</span><strong>{{vm.reception.summary.completed || 0}}</strong></div>
+                <div><span>Vắng / hủy</span><strong>{{(vm.reception.summary.no_show || 0) + (vm.reception.summary.cancelled || 0)}}</strong></div>
+              </div>
+              <div class="panel">
+                <form class="reception-filters" ng-submit="vm.loadReception(1)">
+                  <label>Ngày tiếp nhận<input ng-model="vm.receptionFilters.work_date" required
+                    placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" /></label>
+                  <label>Bác sĩ<select ng-model="vm.receptionFilters.doctor_id"
+                    ng-options="d.doctor_id as (d.doctor_name + ' · ' + d.specialty) for d in vm.doctors">
+                    <option value="">Tất cả bác sĩ</option></select></label>
+                  <label>Trạng thái<select ng-model="vm.receptionFilters.status">
+                    <option value="">Tất cả</option><option value="booked">Đã đặt</option>
+                    <option value="confirmed">Đã xác nhận</option><option value="checked_in">Đã đến · chờ khám</option>
+                    <option value="in_progress">Đang khám</option><option value="completed">Đã khám</option>
+                    <option value="no_show">Vắng hẹn</option><option value="cancelled">Đã hủy</option>
+                  </select></label>
+                  <label>Tìm bệnh nhân / bác sĩ<input ng-model="vm.receptionFilters.search" maxlength="100"
+                    placeholder="Tên hoặc mã" /></label>
+                  <label>Giờ hẹn<select ng-model="vm.receptionFilters.sort_order">
+                    <option value="asc">Sớm đến muộn</option><option value="desc">Muộn đến sớm</option></select></label>
+                  <button class="secondary" ng-disabled="vm.receptionLoading">Tìm và lọc</button>
+                </form>
+                <p class="muted">Check-in trong đúng ngày hẹn. Chỉ ghi vắng khi đã hết thời gian của lượt khám.
+                  Thống kê giữ tổng theo ngày, bác sĩ và từ khóa đang chọn.</p>
+                <p role="status" ng-if="vm.receptionLoading">Đang tải lịch tiếp nhận…</p>
+                <div class="appointment-list" ng-if="!vm.receptionLoading">
+                  <article class="appointment-item" ng-repeat="item in vm.reception.items track by item.appointment_id">
+                    <div class="row-head"><strong>{{vm.clinicDateTime(item.appointment_at)}} · {{item.duration_minutes}} phút</strong>
+                      <span class="status-tag" ng-class="{'ready': item.status==='checked_in'}">{{vm.appointmentStatusName(item.status)}}</span></div>
+                    <h4>{{item.patient_name}} <small>· {{item.patient_code}}</small></h4>
+                    <p>Bác sĩ: {{item.doctor_name}} · {{item.specialty}}</p>
+                    <p ng-if="item.reason">Lý do khám: {{item.reason}}</p>
+                    <p class="reception-note" ng-if="item.status==='checked_in'">Đã tiếp nhận. Bệnh nhân đang chờ bác sĩ bắt đầu khám.</p>
+                    <div class="history-actions">
+                      <button class="secondary" ng-if="vm.canReceiveAppointment(item, 'confirm')" ng-disabled="vm.busy"
+                        ng-click="vm.receiveAppointment(item, 'confirm')">Xác nhận lịch</button>
+                      <button class="primary" ng-if="vm.canReceiveAppointment(item, 'check-in')" ng-disabled="vm.busy"
+                        ng-click="vm.receiveAppointment(item, 'check-in')">Check-in</button>
+                      <button class="secondary" ng-if="vm.canReceiveAppointment(item, 'no-show')" ng-disabled="vm.busy"
+                        ng-click="vm.receiveAppointment(item, 'no-show')">Vắng hẹn</button>
+                      <button class="link" ng-if="vm.canReadPatients()" ng-click="vm.receptionPatient(item)">Thông tin bệnh nhân</button>
+                    </div>
+                  </article>
+                  <p class="empty" ng-if="!vm.reception.items.length">Không có lịch hẹn phù hợp trong ngày này.</p>
+                </div>
+                <div class="pagination"><span>{{vm.reception.total}} lịch · Trang {{vm.reception.page}}</span>
+                  <div><button class="secondary" ng-disabled="vm.receptionLoading || vm.reception.page<=1"
+                    ng-click="vm.loadReception(vm.reception.page-1)">Trước</button>
+                    <button class="secondary" ng-disabled="vm.receptionLoading || vm.reception.page*vm.reception.page_size>=vm.reception.total"
+                      ng-click="vm.loadReception(vm.reception.page+1)">Sau</button></div></div>
+              </div>
+            </section>
+
+            <section ng-if="vm.screen==='appointments' && vm.canReadAppointments()">
+              <div class="page-head row-head">
+                <div><span class="eyebrow">LỊCH KHÁM · GIỜ VIỆT NAM (UTC+7)</span>
+                  <h1>Lịch hẹn</h1><p>Chọn bác sĩ và giờ trống; theo dõi lịch khám theo quyền của bạn.</p></div>
+                <div class="appointment-toolbar">
+                  <button class="secondary" ng-disabled="vm.busy"
+                    ng-click="vm.loadAppointments(vm.appointments.page)">Làm mới</button>
+                  <button class="primary" ng-if="vm.canCreateAppointment()"
+                    ng-click="vm.startAppointmentForm(null)">+ Đặt lịch</button>
+                  <button class="secondary" ng-if="vm.can('doctor_schedules.manage')"
+                    ng-click="vm.startScheduleForm()">+ Ca làm</button>
+                  <button class="secondary" ng-if="vm.can('doctor_schedules.read')"
+                    ng-click="vm.showSchedules ? vm.showSchedules=false : vm.loadSchedules(1)">
+                    {{vm.showSchedules ? 'Ẩn ca làm' : 'Xem ca làm'}}</button>
+                </div>
+              </div>
+              <form class="appointment-catalog" ng-if="vm.can('doctors.read')" ng-submit="vm.loadDoctors()">
+                <input aria-label="Tìm bác sĩ" ng-model="vm.doctorSearch" maxlength="100"
+                  placeholder="Tìm bác sĩ theo mã, tài khoản hoặc chuyên khoa" />
+                <button class="secondary">Tìm bác sĩ</button>
+              </form>
+              <form class="panel booking-form" ng-if="vm.showAppointmentForm" ng-submit="vm.saveAppointment()">
+                <h3>{{vm.appointmentForm.appointment_id ? 'Đổi lịch hẹn' : 'Đặt lịch khám'}}</h3>
+                <p class="muted" ng-if="vm.appointmentForm.appointment_id">
+                  Bệnh nhân: {{vm.appointmentForm.patient_name}} · {{vm.appointmentForm.patient_code}}</p>
+                <div ng-if="vm.can('appointments.create') && !vm.appointmentForm.appointment_id">
+                  <label>Tìm bệnh nhân theo tên / mã / điện thoại</label>
+                  <div class="appointment-catalog">
+                    <input ng-model="vm.bookingPatientSearch" maxlength="100" placeholder="Nhập từ khóa" />
+                    <button type="button" class="secondary" ng-click="vm.findBookingPatients()">Tra cứu</button>
+                  </div>
+                  <label>Bệnh nhân<select required ng-model="vm.appointmentForm.patient_id"
+                    ng-change="vm.loadBookingSlots()"
+                    ng-options="p.patient_id as (p.patient_code + ' · ' + p.full_name) for p in vm.bookingPatients">
+                    <option value="">Chọn bệnh nhân</option></select></label>
+                  <p class="muted" ng-if="!vm.bookingPatients.length">Chưa có hồ sơ phù hợp. Tạo hồ sơ ở trang Bệnh nhân trước.</p>
+                </div>
+                <div class="form-grid">
+                  <label>Bác sĩ<select required ng-model="vm.appointmentForm.doctor_id"
+                    ng-change="vm.loadBookingSlots()"
+                    ng-options="d.doctor_id as (d.doctor_name + ' · ' + d.specialty) for d in vm.doctors">
+                    <option value="">Chọn bác sĩ</option></select></label>
+                  <label>Ngày khám (YYYY-MM-DD)<input required ng-model="vm.appointmentForm.booking_date"
+                    ng-change="vm.loadBookingSlots()" placeholder="YYYY-MM-DD"
+                    pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" /></label>
+                </div>
+                <div class="row-head"><h4>Khung giờ khám</h4>
+                  <button type="button" class="link" ng-click="vm.loadBookingSlots()"
+                    ng-disabled="vm.slotsLoading">Làm mới giờ trống</button></div>
+                <p class="muted" ng-if="vm.slotsLoading">Đang tải khung giờ...</p>
+                <p class="empty" ng-if="!vm.slotsLoading && !vm.slots.length">
+                  Chọn đủ thông tin để xem giờ trống. Nếu không có khung giờ, bác sĩ chưa có ca làm trong ngày.</p>
+                <div class="slot-grid">
+                  <button type="button" class="slot-button" ng-repeat="slot in vm.slots track by slot.key"
+                    ng-disabled="!slot.available || vm.busy || vm.slotsLoading"
+                    ng-class="{'selected': vm.appointmentForm.slot_key===slot.key}"
+                    ng-click="vm.appointmentForm.slot_key=slot.key">
+                    <strong>{{slot.label}}</strong><small>{{slot.available ? 'Còn trống' : 'Không khả dụng'}}</small>
+                  </button>
+                </div>
+                <label>Lý do khám<textarea ng-model="vm.appointmentForm.reason" maxlength="1000" rows="2"
+                  placeholder="Mô tả ngắn lý do đến khám"></textarea></label>
+                <div class="patient-form-actions">
+                  <button class="primary" ng-disabled="vm.busy || vm.slotsLoading || !vm.appointmentForm.slot_key">
+                    {{vm.appointmentForm.appointment_id ? 'Lưu lịch mới' : 'Xác nhận đặt lịch'}}</button>
+                  <button type="button" class="secondary" ng-click="vm.closeAppointmentForm()">Đóng</button>
+                </div>
+              </form>
+              <form class="panel" ng-if="vm.cancelAppointmentForm" ng-submit="vm.cancelAppointment()">
+                <h3>Hủy lịch của {{vm.cancelAppointmentForm.patient_name}}</h3>
+                <p class="muted">{{vm.clinicDateTime(vm.cancelAppointmentForm.appointment_at)}} ·
+                  {{vm.cancelAppointmentForm.doctor_name}}</p>
+                <label>Lý do hủy<textarea required minlength="2" maxlength="1000" rows="2"
+                  ng-model="vm.cancelAppointmentForm.cancellation_reason"></textarea></label>
+                <div class="patient-form-actions">
+                  <button class="primary" ng-disabled="vm.busy">Xác nhận hủy lịch</button>
+                  <button type="button" class="secondary" ng-click="vm.cancelAppointmentForm=null">Đóng</button>
+                </div>
+              </form>
+              <form class="panel" ng-if="vm.showScheduleForm && vm.can('doctor_schedules.manage')"
+                ng-submit="vm.saveSchedule()">
+                <h3>Tạo ca làm bác sĩ</h3>
+                <div class="form-grid">
+                  <label>Bác sĩ<select required ng-model="vm.scheduleForm.doctor_id"
+                    ng-options="d.doctor_id as (d.doctor_name + ' · ' + d.specialty) for d in vm.doctors">
+                    <option value="">Chọn bác sĩ</option></select></label>
+                  <label>Ngày làm (YYYY-MM-DD)<input required ng-model="vm.scheduleForm.work_date"
+                    placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" /></label>
+                  <label>Bắt đầu (HH:mm)<input required ng-model="vm.scheduleForm.start_time"
+                    pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="08:00" /></label>
+                  <label>Kết thúc (HH:mm)<input required ng-model="vm.scheduleForm.end_time"
+                    pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="17:00" /></label>
+                  <label>Phút / lượt khám<input type="number" required min="5" max="240"
+                    ng-model="vm.scheduleForm.slot_minutes" /></label>
+                </div>
+                <p class="muted">Ca làm phải chia hết thành các lượt khám và không trùng ca đang hoạt động.</p>
+                <div class="patient-form-actions"><button class="primary" ng-disabled="vm.busy">Lưu ca làm</button>
+                  <button type="button" class="secondary" ng-click="vm.showScheduleForm=false">Đóng</button></div>
+              </form>
+              <div class="panel" ng-if="vm.showSchedules && vm.can('doctor_schedules.read')">
+                <h3>Ca làm bác sĩ</h3>
+                <form class="history-filters" ng-submit="vm.loadSchedules(1)">
+                  <select aria-label="Lọc ca theo bác sĩ" ng-model="vm.scheduleDoctorFilter"
+                    ng-options="d.doctor_id as d.doctor_name for d in vm.doctors"><option value="">Tất cả bác sĩ</option></select>
+                  <input aria-label="Ngày ca làm" ng-model="vm.scheduleDateFilter" placeholder="YYYY-MM-DD (tùy chọn)"
+                    pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" />
+                  <button class="secondary">Lọc ca làm</button>
+                </form>
+                <div class="schedule-list">
+                  <div class="schedule-item row-head" ng-repeat="s in vm.schedules.items track by s.schedule_id">
+                    <div><strong>{{s.doctor_name}} · {{s.specialty}}</strong>
+                      <p>{{vm.clinicDateTime(s.start_at)}} — {{vm.clinicDateTime(s.end_at)}}</p>
+                      <small>{{s.slot_minutes}} phút / lượt · {{s.status==='active' ? 'Hoạt động' : 'Đã hủy'}}</small></div>
+                    <button class="link" ng-if="s.status==='active' && vm.can('doctor_schedules.manage')"
+                      ng-disabled="vm.busy" ng-click="vm.cancelSchedule(s)">Hủy ca</button>
+                  </div>
+                  <p class="empty" ng-if="!vm.schedules.items.length">Chưa có ca làm phù hợp.</p>
+                </div>
+                <div class="pagination"><span>{{vm.schedules.total}} ca · Trang {{vm.schedules.page}}</span>
+                  <div><button class="secondary" ng-disabled="vm.schedules.page<=1"
+                    ng-click="vm.loadSchedules(vm.schedules.page-1)">Trước</button>
+                    <button class="secondary" ng-disabled="vm.schedules.page*vm.schedules.page_size>=vm.schedules.total"
+                      ng-click="vm.loadSchedules(vm.schedules.page+1)">Sau</button></div></div>
+              </div>
+              <div class="panel">
+                <h3>Danh sách lịch hẹn</h3>
+                <form class="history-filters appointment-filters" ng-submit="vm.loadAppointments(1)">
+                  <input aria-label="Tìm lịch hẹn" ng-model="vm.appointmentFilters.search" maxlength="100"
+                    placeholder="Tên / mã bệnh nhân / bác sĩ" />
+                  <select aria-label="Lọc bác sĩ" ng-model="vm.appointmentFilters.doctor_id"
+                    ng-options="d.doctor_id as d.doctor_name for d in vm.doctors"><option value="">Tất cả bác sĩ</option></select>
+                  <select aria-label="Lọc trạng thái lịch" ng-model="vm.appointmentFilters.status">
+                    <option value="">Mọi trạng thái</option><option value="booked">Đã đặt</option>
+                    <option value="confirmed">Đã xác nhận</option><option value="checked_in">Đã đến</option>
+                    <option value="in_progress">Đang khám</option><option value="completed">Đã khám</option>
+                    <option value="cancelled">Đã hủy</option><option value="no_show">Vắng hẹn</option>
+                  </select>
+                  <input aria-label="Từ ngày" ng-model="vm.appointmentFilters.date_from" placeholder="Từ ngày YYYY-MM-DD"
+                    pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" />
+                  <input aria-label="Đến ngày" ng-model="vm.appointmentFilters.date_to" placeholder="Đến ngày YYYY-MM-DD"
+                    pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" />
+                  <select aria-label="Sắp xếp lịch" ng-model="vm.appointmentFilters.sort_by">
+                    <option value="appointment_at">Giờ hẹn</option><option value="created_at">Ngày tạo</option>
+                    <option value="status">Trạng thái</option></select>
+                  <select aria-label="Thứ tự lịch" ng-model="vm.appointmentFilters.sort_order">
+                    <option value="asc">Tăng dần</option><option value="desc">Giảm dần</option></select>
+                  <button class="secondary">Tìm và lọc</button>
+                </form>
+                <div class="appointment-list">
+                  <article class="appointment-item" ng-repeat="item in vm.appointments.items track by item.appointment_id">
+                    <div class="row-head"><strong>{{vm.clinicDateTime(item.appointment_at)}} · {{item.duration_minutes}} phút</strong>
+                      <span class="status-tag" ng-class="{'ready': item.status==='booked' || item.status==='confirmed'}">
+                        {{vm.appointmentStatusName(item.status)}}</span></div>
+                    <h4>{{item.patient_name}} <small>· {{item.patient_code}}</small></h4>
+                    <p>Bác sĩ: {{item.doctor_name}} · {{item.specialty}}</p>
+                    <p ng-if="item.reason">Lý do khám: {{item.reason}}</p>
+                    <p ng-if="item.cancellation_reason" class="muted">Lý do hủy: {{item.cancellation_reason}}</p>
+                    <p class="reception-note" ng-if="vm.can('appointments.read_self') && item.status==='checked_in'">
+                      Bạn đã được tiếp nhận. Vui lòng chờ bác sĩ gọi vào khám.</p>
+                    <p class="muted" ng-if="vm.can('appointments.read_self') && item.status==='no_show'">
+                      Lịch này được ghi nhận vắng hẹn. Bạn có thể đặt lịch mới hoặc liên hệ lễ tân.</p>
+                    <div class="history-actions">
+                      <button class="link" ng-if="vm.can('encounters.create_assigned') && item.status==='checked_in'"
+                        ng-disabled="vm.busy" ng-click="vm.startEncounter(item)">Bắt đầu khám</button>
+                      <button class="link" ng-if="vm.canReadEncounters() && (item.status==='in_progress' && vm.can('encounters.read_assigned') || item.status==='completed')"
+                        ng-disabled="vm.busy" ng-click="vm.encounterFromAppointment(item)">Xem bệnh án</button>
+                      <button class="link" ng-if="vm.canReceiveAppointment(item, 'confirm')" ng-disabled="vm.busy"
+                        ng-click="vm.receiveAppointment(item, 'confirm')">Xác nhận lịch</button>
+                      <button class="link" ng-if="vm.canReceiveAppointment(item, 'check-in')" ng-disabled="vm.busy"
+                        ng-click="vm.receiveAppointment(item, 'check-in')">Check-in</button>
+                      <button class="link" ng-if="vm.canReceiveAppointment(item, 'no-show')" ng-disabled="vm.busy"
+                        ng-click="vm.receiveAppointment(item, 'no-show')">Vắng hẹn</button>
+                      <button class="link" ng-if="vm.canChangeAppointment(item, 'update')" ng-disabled="vm.busy"
+                        ng-click="vm.startAppointmentForm(item)">Đổi lịch</button>
+                      <button class="link" ng-if="vm.canChangeAppointment(item, 'cancel')" ng-disabled="vm.busy"
+                        ng-click="vm.startCancelAppointment(item)">Hủy lịch</button>
+                    </div>
+                  </article>
+                  <p class="empty" ng-if="!vm.appointments.items.length">Chưa có lịch hẹn phù hợp.</p>
+                </div>
+                <div class="pagination"><span>{{vm.appointments.total}} lịch · Trang {{vm.appointments.page}}</span>
+                  <div><button class="secondary" ng-disabled="vm.appointments.page<=1"
+                    ng-click="vm.loadAppointments(vm.appointments.page-1)">Trước</button>
+                    <button class="secondary" ng-disabled="vm.appointments.page*vm.appointments.page_size>=vm.appointments.total"
+                      ng-click="vm.loadAppointments(vm.appointments.page+1)">Sau</button></div></div>
               </div>
             </section>
 

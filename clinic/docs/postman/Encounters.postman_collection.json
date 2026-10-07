@@ -1,0 +1,634 @@
+{
+  "info": {
+    "name": "Clinic - Khám bệnh (3.1)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "appointment_id",
+      "value": ""
+    },
+    {
+      "key": "appointment_version",
+      "value": ""
+    },
+    {
+      "key": "encounter_id",
+      "value": ""
+    },
+    {
+      "key": "encounter_version",
+      "value": ""
+    },
+    {
+      "key": "order_id",
+      "value": ""
+    },
+    {
+      "key": "order_version",
+      "value": ""
+    },
+    {
+      "key": "result_id",
+      "value": ""
+    },
+    {
+      "key": "result_version",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Danh sách bệnh án",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/v1/encounters?page=1&page_size=20&sort_order=desc",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Xem lịch lấy version",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bắt đầu khám",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"appointment_id\": \"{{appointment_id}}\",\n  \"appointment_version\": \"{{appointment_version}}\",\n  \"chief_complaint\": \"Khám định kỳ\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Xem bệnh án",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lưu bệnh án",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"chief_complaint\": \"Khám định kỳ\",\n  \"clinical_notes\": \"Nội dung khám demo\",\n  \"diagnosis_summary\": \"Kết luận demo\",\n  \"treatment_plan\": \"Hướng xử trí demo\",\n  \"vital_signs\": {\n    \"temperature_c\": 36.8,\n    \"pulse_bpm\": 75\n  },\n  \"diagnoses\": [\n    {\n      \"name\": \"Chẩn đoán demo\",\n      \"is_primary\": true\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Thêm chỉ định",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/clinical-orders",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"order_type\": \"laboratory\",\n  \"name\": \"Xét nghiệm demo\",\n  \"instructions\": \"Hướng dẫn demo\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sửa chỉ định",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/clinical-orders/{{order_id}}",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"order_version\": \"{{order_version}}\",\n  \"order_type\": \"laboratory\",\n  \"name\": \"Xét nghiệm demo\",\n  \"status\": \"in_progress\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Nhập kết quả",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/clinical-orders/{{order_id}}/results",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"order_version\": \"{{order_version}}\",\n  \"result_text\": \"Kết quả demo\",\n  \"numeric_value\": 0,\n  \"unit\": \"demo\",\n  \"reference_range\": \"Demo\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sửa kết quả",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/clinical-orders/{{order_id}}/results/{{result_id}}",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"order_version\": \"{{order_version}}\",\n  \"result_version\": \"{{result_version}}\",\n  \"result_text\": \"Kết quả demo đã sửa\",\n  \"numeric_value\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hoàn tất khám",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/complete",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lịch sử phiên bản",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/versions?page=1&page_size=10",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hủy chỉ định (nhánh riêng)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/clinical-orders/{{order_id}}/cancel",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"order_version\": \"{{order_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Xóa chỉ định (nhánh riêng)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/clinical-orders/{{order_id}}",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"order_version\": \"{{order_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Xóa kết quả (nhánh riêng)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/encounters/{{encounter_id}}/clinical-orders/{{order_id}}/results/{{result_id}}",
+        "description": "Dùng token Bác sĩ được giao; bắt đầu từ lịch đã check-in. Bệnh nhân chỉ GET bệnh án hoàn tất. Các request hủy/xóa là nhánh riêng trước hoàn tất.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{encounter_version}}\",\n  \"order_version\": \"{{order_version}}\",\n  \"result_version\": \"{{result_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              " const body = pm.response.json();",
+              " if (body.encounter_id) { pm.collectionVariables.set(\"encounter_id\", body.encounter_id); pm.collectionVariables.set(\"encounter_version\", body.version); }",
+              " else if (body.appointment_id && body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              " if (body.clinical_orders && body.clinical_orders.length) {",
+              "  let order = body.clinical_orders.find(o => o.order_id === pm.collectionVariables.get(\"order_id\"));",
+              "  if (!order) order = body.clinical_orders[body.clinical_orders.length - 1];",
+              "  pm.collectionVariables.set(\"order_id\", order.order_id); pm.collectionVariables.set(\"order_version\", order.version);",
+              "  if (order.results.length) { let result = order.results.find(r => r.result_id === pm.collectionVariables.get(\"result_id\")) || order.results[order.results.length - 1]; pm.collectionVariables.set(\"result_id\", result.result_id); pm.collectionVariables.set(\"result_version\", result.version); }",
+              " }",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.expect(pm.response.code).to.be.within(200,299));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

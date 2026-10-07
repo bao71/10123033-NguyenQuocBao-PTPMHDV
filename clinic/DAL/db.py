@@ -3,6 +3,7 @@ from collections.abc import Generator
 import pyodbc
 
 from Core.config import get_settings
+from DAL.procedures import call
 
 pyodbc.pooling = True
 
@@ -27,7 +28,7 @@ def get_db() -> Generator[pyodbc.Connection, None, None]:
 def database_is_ready() -> bool:
     try:
         with connect() as connection:
-            cursor = connection.execute("SELECT 1")
-            return cursor.fetchone()[0] == 1
+            cursor = call(connection, "clinic_health_ready")
+            return cursor.fetchone().ready == 1
     except pyodbc.Error:
         return False

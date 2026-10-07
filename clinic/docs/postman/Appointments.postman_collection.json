@@ -1,0 +1,315 @@
+{
+  "info": {
+    "name": "Clinic - 2.3 Appointments",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Điền access_token của Lễ tân, patient_id và doctor_id cần thử. Ngày/giờ mẫu là 2030-01-02; sửa nếu cần. ID và version được lưu sau response thành công. Với Bệnh nhân, bỏ patient_id khi đặt. Xem docs/appointments.md."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "doctor_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patient_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "schedule_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "schedule_version",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointment_version",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "work_date",
+      "value": "2030-01-02",
+      "type": "string"
+    },
+    {
+      "key": "start_at",
+      "value": "2030-01-02T08:00:00+07:00",
+      "type": "string"
+    },
+    {
+      "key": "end_at",
+      "value": "2030-01-02T11:00:00+07:00",
+      "type": "string"
+    },
+    {
+      "key": "appointment_at",
+      "value": "2030-01-02T08:00:00+07:00",
+      "type": "string"
+    },
+    {
+      "key": "new_appointment_at",
+      "value": "2030-01-02T08:30:00+07:00",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 List doctors",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/doctors?page_size=100",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200 && !pm.collectionVariables.get(\"doctor_id\")) { const d=pm.response.json().items[0]; if(d) pm.collectionVariables.set(\"doctor_id\", d.doctor_id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Create schedule (Admin / Receptionist)",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/doctor-schedules",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doctor_id\": \"{{doctor_id}}\",\n  \"start_at\": \"{{start_at}}\",\n  \"end_at\": \"{{end_at}}\",\n  \"slot_minutes\": 30\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"schedule_id\", pm.response.json()[\"schedule_id\"]); }",
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"schedule_version\", pm.response.json()[\"version\"]); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 List schedules",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/doctor-schedules?doctor_id={{doctor_id}}&date_from={{work_date}}&date_to={{work_date}}",
+        "header": []
+      }
+    },
+    {
+      "name": "04 Available slots",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/doctors/{{doctor_id}}/slots?work_date={{work_date}}",
+        "header": []
+      }
+    },
+    {
+      "name": "05 Book appointment (Receptionist)",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/appointments",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"patient_id\": \"{{patient_id}}\",\n  \"doctor_id\": \"{{doctor_id}}\",\n  \"schedule_id\": \"{{schedule_id}}\",\n  \"appointment_at\": \"{{appointment_at}}\",\n  \"reason\": \"Khám định kỳ\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"appointment_id\", pm.response.json()[\"appointment_id\"]); }",
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"appointment_version\", pm.response.json()[\"version\"]); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 List appointments",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/appointments?doctor_id={{doctor_id}}&date_from={{work_date}}&date_to={{work_date}}&sort_order=asc&page=1&page_size=20",
+        "header": []
+      }
+    },
+    {
+      "name": "07 Appointment detail",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"appointment_version\", pm.response.json()[\"version\"]); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Change appointment",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doctor_id\": \"{{doctor_id}}\",\n  \"schedule_id\": \"{{schedule_id}}\",\n  \"appointment_at\": \"{{new_appointment_at}}\",\n  \"reason\": \"Đổi giờ khám\",\n  \"version\": \"{{appointment_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"appointment_version\", pm.response.json()[\"version\"]); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Cancel appointment",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/cancel",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{appointment_version}}\",\n  \"cancellation_reason\": \"Bận công việc\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"appointment_version\", pm.response.json()[\"version\"]); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Cancel schedule (Admin / Receptionist)",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/doctor-schedules/{{schedule_id}}/cancel",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{schedule_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) { pm.collectionVariables.set(\"schedule_version\", pm.response.json()[\"version\"]); }"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

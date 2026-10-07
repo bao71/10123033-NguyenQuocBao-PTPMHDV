@@ -1,0 +1,188 @@
+{
+  "info": {
+    "name": "Clinic - Tiếp nhận (2.5)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "appointment_id",
+      "value": ""
+    },
+    {
+      "key": "appointment_version",
+      "value": ""
+    },
+    {
+      "key": "work_date",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Danh sách tiếp nhận",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/v1/reception?work_date={{work_date}}&page=1&page_size=20&sort_order=asc",
+        "description": "Dùng token Lễ tân. Cập nhật appointment_id/work_date. Lấy version mới nhất từ GET. Check-in đúng ngày; vắng sau khi hết lượt khám."
+      },
+      "event": []
+    },
+    {
+      "name": "Xem lịch lấy version",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}",
+        "description": "Dùng token Lễ tân. Cập nhật appointment_id/work_date. Lấy version mới nhất từ GET. Check-in đúng ngày; vắng sau khi hết lượt khám."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  if (body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Xác nhận lịch",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/confirm",
+        "description": "Dùng token Lễ tân. Cập nhật appointment_id/work_date. Lấy version mới nhất từ GET. Check-in đúng ngày; vắng sau khi hết lượt khám.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{appointment_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  if (body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check-in",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/check-in",
+        "description": "Dùng token Lễ tân. Cập nhật appointment_id/work_date. Lấy version mới nhất từ GET. Check-in đúng ngày; vắng sau khi hết lượt khám.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{appointment_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  if (body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vắng hẹn",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/no-show",
+        "description": "Dùng token Lễ tân. Cập nhật appointment_id/work_date. Lấy version mới nhất từ GET. Check-in đúng ngày; vắng sau khi hết lượt khám.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"{{appointment_version}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  if (body.version) pm.collectionVariables.set(\"appointment_version\", body.version);",
+              "}",
+              "pm.test(\"Request thành công\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

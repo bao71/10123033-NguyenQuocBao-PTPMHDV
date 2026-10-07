@@ -74,9 +74,13 @@ services:
       DB_DRIVER: ODBC Driver 18 for SQL Server
       DB_ENCRYPT: "yes"
       DB_TRUST_SERVER_CERTIFICATE: "yes"
-      SMTP_HOST: mailhog
-      SMTP_PORT: "1025"
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_FROM: ${SMTP_FROM:-clinic@example.local}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-30}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:

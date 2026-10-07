@@ -23,6 +23,19 @@ IF @result < 0 THROW 51000, 'Could not acquire database creation lock.', 1;
 IF DB_ID(N'ClinicManagement') IS NULL
     EXEC(N'CREATE DATABASE [ClinicManagement] COLLATE Latin1_General_100_CI_AS_SC');"
 
+# SQL Server can report itself healthy while an existing application database
+# is still recovering after Docker starts.
+for attempt in {1..60}; do
+    if "${sqlcmd[@]}" -d "$database" -Q "SELECT 1;" > /dev/null 2>&1; then
+        break
+    fi
+    if ((attempt == 60)); then
+        echo "Database $database did not become ready." >&2
+        exit 1
+    fi
+    sleep 1
+done
+
 "${sqlcmd[@]}" -d "$database" -Q "SET XACT_ABORT ON; SET NOCOUNT ON;
 BEGIN TRANSACTION;
 DECLARE @result int;
@@ -102,6 +115,14 @@ END CATCH;
 SQL
     } > "$temporary_sql"
     "${sqlcmd[@]}" -d "$database" -i "$temporary_sql"
+done
+
+# Stored procedures are CREATE OR ALTER batches separated by GO. Reapply them
+# after schema migrations so development changes reach an existing database.
+procedure_files=(/workspace/Database/procedures/*.sql)
+for file in "${procedure_files[@]}"; do
+    "${sqlcmd[@]}" -d "$database" -i "$file"
+    echo "Applied procedures: $(basename "$file")"
 done
 
 cat > "$login_sql" <<SQL
